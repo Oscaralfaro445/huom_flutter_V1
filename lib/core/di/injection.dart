@@ -14,6 +14,7 @@ import '../../features/pet/domain/usecases/bathe_usecase.dart';
 import '../../features/pet/domain/usecases/create_pet_usecase.dart';
 import '../../features/pet/domain/usecases/die_usecase.dart';
 import '../services/stat_decay_service.dart';
+import '../services/coins_service.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -27,7 +28,7 @@ Future<void> setupDependencies() async {
 
   // Services
   sl.registerSingleton<StatDecayService>(StatDecayService());
-
+  sl.registerSingleton<CoinsService>(CoinsService());
   // Repositories
   sl.registerSingleton<PetRepository>(PetRepositoryImpl());
   sl.registerSingleton<MemorialRepository>(MemorialRepositoryImpl());

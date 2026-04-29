@@ -7,6 +7,7 @@ import '../../domain/usecases/feed_pet_usecase.dart';
 import '../providers/pet_provider.dart';
 import '../widgets/stats_bar_widget.dart';
 import '../widgets/action_buttons_widget.dart';
+import 'jump_rope_screen.dart';
 
 class GameScreen extends ConsumerWidget {
   const GameScreen({super.key});
@@ -35,12 +36,8 @@ class GameScreen extends ConsumerWidget {
 
   Color _getBackgroundColor() {
     final hour = DateTime.now().hour;
-    if (hour >= 6 && hour < 12) {
-      return const Color(0xFF1A2A4A);
-    }
-    if (hour >= 12 && hour < 19) {
-      return const Color(0xFF1A1A2E);
-    }
+    if (hour >= 6 && hour < 12) return const Color(0xFF1A2A4A);
+    if (hour >= 12 && hour < 19) return const Color(0xFF1A1A2E);
     return const Color(0xFF0A0A1A);
   }
 
@@ -79,8 +76,7 @@ class GameScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Header con nombre y momento del día
-            // Header con nombre, momento del día y botón memorial
+            // Header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
@@ -128,6 +124,7 @@ class GameScreen extends ConsumerWidget {
                 ],
               ),
             ),
+
             // Barras de stats
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -153,10 +150,7 @@ class GameScreen extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: AppColors.statCritical.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppColors.statCritical,
-                      width: 1,
-                    ),
+                    border: Border.all(color: AppColors.statCritical, width: 1),
                   ),
                   child: Text(
                     _getWarningMessage(pet),
@@ -170,7 +164,7 @@ class GameScreen extends ConsumerWidget {
                 ),
               ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
             // Área principal de la mascota
             Expanded(
@@ -179,15 +173,11 @@ class GameScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppColors.surface,
-                    width: 2,
-                  ),
+                  border: Border.all(color: AppColors.surface, width: 2),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Sprite placeholder de la mascota
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       child: Text(
@@ -197,7 +187,6 @@ class GameScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Nombre de mutación
                     Text(
                       _getMutationName(pet.mutation),
                       style: const TextStyle(
@@ -207,7 +196,6 @@ class GameScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Etapa
                     Text(
                       _getStageName(pet.stage),
                       style: const TextStyle(
@@ -221,7 +209,42 @@ class GameScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+
+            // Botón minijuego
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const JumpRopeScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Text('🎮', style: TextStyle(fontSize: 16)),
+                  label: const Text(
+                    'Jump Rope',
+                    style: TextStyle(
+                      fontFamily: 'PressStart2P',
+                      fontSize: 10,
+                      color: AppColors.statPlay,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: const BorderSide(color: AppColors.statPlay, width: 2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
 
             // Botones de acción
             Padding(
@@ -237,7 +260,7 @@ class GameScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
           ],
         ),
       ),
