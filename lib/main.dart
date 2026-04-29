@@ -4,6 +4,7 @@ import 'core/di/injection.dart';
 import 'core/theme/app_theme.dart';
 import 'features/pet/presentation/providers/pet_provider.dart';
 import 'features/pet/presentation/screens/create_pet_screen.dart';
+import 'features/pet/presentation/screens/death_screen.dart';
 import 'features/pet/presentation/screens/game_screen.dart';
 
 void main() async {
@@ -18,6 +19,7 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final petAsync = ref.watch(petActionsProvider);
+    final deathMemorial = ref.watch(deathMemorialProvider);
 
     return MaterialApp(
       title: 'HUOM',
@@ -35,8 +37,13 @@ class MyApp extends ConsumerWidget {
         error: (e, _) => Scaffold(
           body: Center(child: Text('Error: $e')),
         ),
-        data: (pet) =>
-            pet == null ? const CreatePetScreen() : const GameScreen(),
+        data: (pet) {
+          // Mostrar pantalla de muerte si hay memorial
+          if (deathMemorial != null) {
+            return DeathScreen(memorial: deathMemorial);
+          }
+          return pet == null ? const CreatePetScreen() : const GameScreen();
+        },
       ),
     );
   }

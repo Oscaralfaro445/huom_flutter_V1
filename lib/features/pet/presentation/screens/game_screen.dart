@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../memorial/presentation/screens/memorial_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/pet.dart';
 import '../../domain/usecases/feed_pet_usecase.dart';
@@ -9,6 +10,13 @@ import '../widgets/action_buttons_widget.dart';
 
 class GameScreen extends ConsumerWidget {
   const GameScreen({super.key});
+
+  String _getWarningMessage(Pet pet) {
+    if (pet.stats.health < 20) return '⚠ Tu mascota está enferma';
+    if (pet.stats.hunger < 25) return '⚠ Tu mascota tiene mucha hambre';
+    if (pet.stats.sleep < 15) return '⚠ Tu mascota está agotada';
+    return '';
+  }
 
   String _getTimeOfDayBackground() {
     final hour = DateTime.now().hour;
@@ -72,6 +80,7 @@ class GameScreen extends ConsumerWidget {
         child: Column(
           children: [
             // Header con nombre y momento del día
+            // Header con nombre, momento del día y botón memorial
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
@@ -100,12 +109,25 @@ class GameScreen extends ConsumerWidget {
                           fontFamily: 'PressStart2P',
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const MemorialScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          '🪦',
+                          style: TextStyle(fontSize: 20),
+                        ),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-
             // Barras de stats
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -116,6 +138,37 @@ class GameScreen extends ConsumerWidget {
                 sleep: pet.stats.sleep,
               ),
             ),
+
+            // Banner de advertencia
+            if (pet.stats.hunger < 25 ||
+                pet.stats.sleep < 15 ||
+                pet.stats.health < 20)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                child: Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.statCritical.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.statCritical,
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    _getWarningMessage(pet),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'PressStart2P',
+                      fontSize: 7,
+                      color: AppColors.statCritical,
+                    ),
+                  ),
+                ),
+              ),
 
             const SizedBox(height: 16),
 
