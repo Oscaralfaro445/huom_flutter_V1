@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../store/presentation/providers/coins_provider.dart';
 import '../../../memorial/presentation/screens/memorial_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/pet.dart';
@@ -106,6 +107,32 @@ class GameScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
+                      // Monedas
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final coinsAsync = ref.watch(coinsProvider);
+                          return coinsAsync.when(
+                            loading: () => const SizedBox.shrink(),
+                            error: (_, __) => const SizedBox.shrink(),
+                            data: (coins) => Row(
+                              children: [
+                                const Text('🪙',
+                                    style: TextStyle(fontSize: 14)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$coins',
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    color: AppColors.statMood,
+                                    fontFamily: 'PressStart2P',
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                       GestureDetector(
                         onTap: () {
                           Navigator.of(context).push(
@@ -217,12 +244,14 @@ class GameScreen extends ConsumerWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
+                  onPressed: () async {
+                    await Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => const JumpRopeScreen(),
                       ),
                     );
+                    // Refrescar monedas al volver
+                    ref.read(coinsProvider.notifier).refresh();
                   },
                   icon: const Text('🎮', style: TextStyle(fontSize: 16)),
                   label: const Text(
