@@ -9,7 +9,7 @@
 ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝     ╚═╝
 ```
 
-### Tu mascota virtual. Tu mundo pixel.
+### Your virtual pet. Your pixel world.
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.41.3-02569B?style=flat-square&logo=flutter)
 ![Flame](https://img.shields.io/badge/Flame-1.18.0-orange?style=flat-square)
@@ -20,177 +20,177 @@
 
 ---
 
-## ¿Qué es HUOM?
+## What is HUOM?
 
-HUOM es un juego de mascota virtual al estilo **Tamagotchi**, construido en Flutter con el motor de juegos **Flame**. Crea tu mascota desde un huevo, cuídala, juega con ella y observa cómo evoluciona en una de **7 mutaciones únicas** según cómo la hayas tratado.
+HUOM is a virtual pet game inspired by **Tamagotchi**, built in Flutter using the **Flame** game engine. Hatch your pet from an egg, take care of it, play with it, and watch it evolve into one of **7 unique mutations** based on how you treat it.
 
-Cada mascota tiene su propia historia. Algunas viven décadas. Otras mueren jóvenes. Todas son recordadas.
+Every pet has its own story. Some live for decades. Others die young. All of them are remembered.
 
 ---
 
-## Características
+## Features
 
 | | |
 |---|---|
-| 🥚 **Ciclo de vida completo** | Huevo → Cría → Adulto → Anciano → Muerte |
-| 🧬 **7 mutaciones dinámicas** | La evolución depende de cómo cuidas a tu mascota |
-| 📊 **5 estadísticas en tiempo real** | Hambre, Humor, Juego, Sueño, Salud |
-| ⏱️ **Decay offline** | Las stats bajan aunque la app esté cerrada |
-| 🎮 **Minijuego: Jump Rope** | Gana monedas saltando la cuerda |
-| 🪙 **Sistema de monedas** | Recompensas persistentes entre sesiones |
-| 🌅 **Ciclo día/noche** | El fondo cambia según la hora real |
-| 🪦 **Memorial** | Todas tus mascotas fallecidas quedan registradas |
+| 🥚 **Full life cycle** | Egg → Baby → Adult → Elder → Death |
+| 🧬 **7 dynamic mutations** | Evolution depends on how you raise your pet |
+| 📊 **5 real-time stats** | Hunger, Mood, Play, Sleep, Health |
+| ⏱️ **Offline decay** | Stats drop even when the app is closed |
+| 🎮 **Jump Rope minigame** | Earn coins by skipping rope |
+| 🪙 **Coin system** | Persistent rewards across sessions |
+| 🌅 **Day/night cycle** | Background changes based on real time |
+| 🪦 **Memorial** | Every pet you've lost is remembered |
 
 ---
 
-## Ciclo de vida
+## Life Cycle
 
 ```
-        🥚 Huevo
+        🥚 Egg
            │
            ▼
-        🐣 Cría  ◄── Stats acumulados definen la mutación
+        🐣 Baby   ◄── Accumulated stats determine mutation
            │
            ▼
-   🧬 Evolución  ◄── ¡Animación espectacular!
+   🧬 Evolution  ◄── Spectacular animation!
            │
            ▼
-      🐾 Adulto
+      🐾 Adult
            │
            ▼
-       👴 Anciano  (decay más lento, máx 30 días)
+       👴 Elder   (slower decay, max 30 days)
            │
            ▼
-        💀 Muerte  ──► 🪦 Memorial
+        💀 Death  ──► 🪦 Memorial
 ```
 
-La mascota también puede morir por **negligencia**:
-- Hambre en 0 por más de 6 horas
-- Salud en 0 por más de 12 horas
+Your pet can also die from **neglect**:
+- Hunger at 0 for more than 6 hours
+- Health at 0 for more than 12 hours
 
 ---
 
-## Las 7 Mutaciones
+## The 7 Mutations
 
-La mutación se determina al final de la etapa de **Cría**, según el promedio de tus stats:
+Mutation is determined at the end of the **Baby** stage, based on your average stats:
 
-| Mutación | Condición | Estilo de juego |
+| Mutation | Condition | Playstyle |
 |---|---|---|
-| 🟢 **Slime Bit** | Cuidado equilibrado | Neutral, sin modificadores |
-| 🌵 **Cactus Rex** | Hambre y sueño < 40 | Resistente pero gruñón |
-| 💧 **Aqua Slime** | Salud > 75 y humor > 60 | Saludable y estable |
-| ⚡ **Thunder Leaf** | Juego > 70 | Atlética, come más |
-| 🌸 **Blossom** | Humor > 75 | Feliz naturalmente |
-| 💀 **Shadow Bone** | Salud < 30 consistentemente | Difícil de cuidar |
-| ⚠️ **Glitch Pet** | Promedio general < 65 | Caótica e impredecible |
+| 🟢 **Slime Bit** | Balanced care | Neutral, no modifiers |
+| 🌵 **Cactus Rex** | Hunger & sleep < 40 | Tough but grumpy |
+| 💧 **Aqua Slime** | Health > 75 & mood > 60 | Healthy and stable |
+| ⚡ **Thunder Leaf** | Play > 70 | Athletic, eats more |
+| 🌸 **Blossom** | Mood > 75 | Naturally happy |
+| 💀 **Shadow Bone** | Health < 30 consistently | Hard to keep alive |
+| ⚠️ **Glitch Pet** | Overall average < 65 | Chaotic and unpredictable |
 
 ---
 
-## Estadísticas
+## Stats
 
-Cada stat decae con el tiempo de forma natural:
+Each stat decays naturally over time:
 
-| Stat | Icono | Decay base | Se recupera con |
+| Stat | Icon | Base decay | Restored by |
 |---|---|---|---|
-| Hambre | 🍖 | 3.0 pts/hora | Alimentar |
-| Humor | 😊 | 1.5 pts/hora | Jugar |
-| Juego | 🎯 | 2.0 pts/hora | Jugar |
-| Sueño | 😴 | 2.5 pts/hora | Dormir |
-| Salud | ❤️ | Variable | Cuidado general |
+| Hunger | 🍖 | 3.0 pts/hour | Feeding |
+| Mood | 😊 | 1.5 pts/hour | Playing |
+| Play | 🎯 | 2.0 pts/hour | Playing |
+| Sleep | 😴 | 2.5 pts/hour | Sleeping |
+| Health | ❤️ | Variable | Overall care |
 
-> Los multiplicadores de decay cambian según la **etapa de vida** y la **mutación**.
+> Decay multipliers change based on **life stage** and **active mutation**.
 
-### Estados emocionales
+### Emotional states
 
-- **😊 Happy** — Todo en orden
-- **😰 Stressed** — Hambre < 25 o sueño < 15
-- **🤒 Sick** — Salud < 20
+- **😊 Happy** — Everything is fine
+- **😰 Stressed** — Hunger < 25 or sleep < 15
+- **🤒 Sick** — Health < 20
 - **💀 Dead** — Game over
 
 ---
 
-## Minijuego: Jump Rope 🎮
+## Minigame: Jump Rope 🎮
 
-Un minijuego arcade donde debes saltar la cuerda y evitar obstáculos. Las monedas ganadas dependen de tu puntuación:
+An arcade minigame where you jump rope and dodge obstacles. Coins earned depend on your score:
 
-| Puntuación | Monedas |
+| Score | Coins |
 |---|---|
-| ≥ 20 puntos | 🪙 30 monedas |
-| ≥ 10 puntos | 🪙 20 monedas |
-| ≥ 5 puntos | 🪙 15 monedas |
-| < 5 puntos | 🪙 5 monedas |
+| ≥ 20 points | 🪙 30 coins |
+| ≥ 10 points | 🪙 20 coins |
+| ≥ 5 points | 🪙 15 coins |
+| < 5 points | 🪙 5 coins |
 
-Jugar también sube el stat de **Juego** de tu mascota.
+Playing also increases your pet's **Play** stat.
 
 ---
 
-## Stack tecnológico
+## Tech Stack
 
 ```
 Flutter 3.41.3
-├── flame ^1.18.0           — Motor de juego (sprites, animaciones, física)
-├── flame_audio ^2.10.0     — Audio y efectos de sonido
+├── flame ^1.18.0           — Game engine (sprites, animations, physics)
+├── flame_audio ^2.10.0     — Audio and sound effects
 ├── flutter_riverpod ^2.5.0 — State management
-├── hive + hive_flutter     — Persistencia local (mascota, monedas)
-├── go_router ^14.1.4       — Navegación
-└── get_it ^7.7.0           — Inyección de dependencias
+├── hive + hive_flutter     — Local persistence (pet data, coins)
+├── go_router ^14.1.4       — Navigation
+└── get_it ^7.7.0           — Dependency injection
 ```
 
-### Arquitectura
+### Architecture
 
 ```
 lib/
 ├── core/
-│   ├── di/            — Inyección de dependencias (GetIt)
+│   ├── di/            — Dependency injection (GetIt)
 │   ├── services/      — StatDecay, Coins, Mutation, MutationHistory
-│   └── theme/         — Colores y tema dark/pixel
+│   └── theme/         — Colors and dark/pixel theme
 ├── features/
 │   ├── pet/
-│   │   ├── domain/    — Entidades, repositorios, casos de uso
-│   │   ├── data/      — Modelos Hive, implementaciones
+│   │   ├── domain/    — Entities, repositories, use cases
+│   │   ├── data/      — Hive models, implementations
 │   │   └── presentation/ — Screens, providers, widgets
-│   ├── memorial/      — Sistema de mascotas fallecidas
-│   └── store/         — Sistema de monedas
+│   ├── memorial/      — Deceased pets system
+│   └── store/         — Coin system
 └── game/
-    ├── pet_flame_game.dart  — Juego principal Flame
-    ├── pet_component.dart   — Sprite animado de la mascota
+    ├── pet_flame_game.dart  — Main Flame game
+    ├── pet_component.dart   — Animated pet sprite
     └── minigames/           — Jump Rope
 ```
 
 ---
 
-## Instalación y setup
+## Getting Started
 
-### Requisitos
+### Requirements
 
 - Flutter SDK 3.41.3+
-- Android Studio o VS Code
-- Dispositivo Android / Emulador / Chrome
+- Android Studio or VS Code
+- Android device / Emulator / Chrome
 
-### Pasos
+### Setup
 
 ```bash
-# 1. Clonar el repositorio
+# 1. Clone the repository
 git clone https://github.com/IIAteeneaaII/huom_flutter_V1.git
 cd huom_flutter_V1
 
-# 2. Instalar dependencias
+# 2. Install dependencies
 flutter pub get
 
-# 3. Correr en Chrome (sin configuración adicional)
+# 3. Run on Chrome (no extra setup needed)
 flutter run -d chrome
 
-# 4. Correr en Android
+# 4. Run on Android
 flutter run
 ```
 
-### Para habilitar Firebase (opcional)
+### Enabling Firebase (optional)
 
-Firebase está temporalmente desactivado. Para activarlo:
+Firebase is temporarily disabled. To enable it:
 
-1. Crea un proyecto en [Firebase Console](https://console.firebase.google.com)
-2. Descarga `google-services.json` y colócalo en `android/app/`
-3. Descomenta las dependencias en `pubspec.yaml`:
+1. Create a project in [Firebase Console](https://console.firebase.google.com)
+2. Download `google-services.json` and place it in `android/app/`
+3. Uncomment the dependencies in `pubspec.yaml`:
    ```yaml
    firebase_core: ^3.3.0
    firebase_analytics: ^11.2.1
@@ -198,39 +198,39 @@ Firebase está temporalmente desactivado. Para activarlo:
    firebase_messaging: ^15.0.4
    flutter_local_notifications: ^17.2.1+2
    ```
-4. Corre `flutter pub get`
+4. Run `flutter pub get`
 
 ---
 
-## Animaciones de la mascota
+## Pet Animations
 
-Los sprites usan sheets de **192×192px** con grillas de 48px:
+Sprites use **192×192px** sheets with a 48px grid:
 
-| Fila | Animación | Frames | Velocidad |
+| Row | Animation | Frames | Speed |
 |---|---|---|---|
 | 0 | Idle | 4 | 0.20s/frame |
-| 1 | Comer | 4 | 0.15s/frame |
-| 2 | Dormir | 4 | 0.30s/frame |
-| 3 | Triste | 3 | 0.25s/frame |
+| 1 | Eat | 4 | 0.15s/frame |
+| 2 | Sleep | 4 | 0.30s/frame |
+| 3 | Sad | 3 | 0.25s/frame |
 
-El estado **Huevo** usa `egg.png` (96×48px, 2 frames) con animación de pulsación.
+The **Egg** state uses `egg.png` (96×48px, 2 frames) with a pulse animation.
 
 ---
 
 ## Roadmap
 
-- [ ] Tienda de items con monedas
-- [ ] Más minijuegos
-- [ ] Más mutaciones y biomas
-- [ ] Notificaciones push (cuando las stats estén críticas)
-- [ ] Modo multijugador / comparar mascotas
+- [ ] Item shop powered by coins
+- [ ] More minigames
+- [ ] More mutations and biomes
+- [ ] Push notifications when stats are critical
+- [ ] Multiplayer / pet comparison
 
 ---
 
 <div align="center">
 
-Hecho con ❤️ y mucho pixel art
+Made with ❤️ and lots of pixel art
 
-*"Cada mascota es única. Cuídala bien."*
+*"Every pet is unique. Take good care of it."*
 
 </div>
