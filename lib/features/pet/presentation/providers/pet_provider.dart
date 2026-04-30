@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/services/mutation_check_service.dart';
+import '../../../../core/services/mutation_history_tracker.dart';
 import '../../../../core/services/stat_decay_service.dart';
 import '../../../memorial/domain/pet_memorial.dart';
 import '../../domain/entities/pet.dart';
@@ -27,21 +29,58 @@ class PetActionsNotifier extends AsyncNotifier<Pet?> {
   Future<Pet?> build() async {
     final repository = sl<PetRepository>();
     final decayService = sl<StatDecayService>();
-    final pet = await repository.getActivePet();
+    final tracker = sl<MutationHistoryTracker>();
 
+    final pet = await repository.getActivePet();
     if (pet == null) return null;
 
     // Aplicar decay al abrir la app
     final decayedPet = decayService.applyDecay(pet, DateTime.now());
-    await repository.savePet(decayedPet);
+
+    // Registrar snapshot diario durante etapa Cría (una vez por día de juego)
+    await tracker.recordSnapshot(decayedPet);
+
+    // Verificar y aplicar evolución de etapa
+    final evolvedPet = await _checkEvolution(decayedPet);
+
+    await repository.savePet(evolvedPet);
 
     // Detectar muerte automática
-    if (decayedPet.state == PetState.dead) {
-      await _handleDeath(decayedPet);
+    if (evolvedPet.state == PetState.dead) {
+      await _handleDeath(evolvedPet);
       return null;
     }
 
-    return decayedPet;
+    return evolvedPet;
+  }
+
+  /// Transiciones de etapa basadas en días vivos:
+  ///   egg  → baby   (día >= 1)
+  ///   baby → adult  (día >= 7, con selección de mutación)
+  ///   adult → elder (día >= 20)
+  Future<Pet> _checkEvolution(Pet pet) async {
+    if (pet.stage == PetStage.egg && pet.daysAlive >= 1) {
+      return pet.copyWith(stage: PetStage.baby);
+    }
+
+    if (pet.stage == PetStage.baby && pet.daysAlive >= 7) {
+      final tracker = sl<MutationHistoryTracker>();
+      final checkService = sl<MutationCheckService>();
+
+      final averages = await tracker.getAverages(pet.id);
+      final mutation = checkService.checkMutation(averages);
+
+      // Limpiar historial para que no afecte a una vida futura
+      await tracker.clearHistory(pet.id);
+
+      return pet.copyWith(stage: PetStage.adult, mutation: mutation);
+    }
+
+    if (pet.stage == PetStage.adult && pet.daysAlive >= 20) {
+      return pet.copyWith(stage: PetStage.elder);
+    }
+
+    return pet;
   }
 
   Future<void> _handleDeath(Pet pet) async {
@@ -102,7 +141,6 @@ class PetActionsNotifier extends AsyncNotifier<Pet?> {
     final current = state.valueOrNull;
     if (current == null) return;
 
-    // Releer desde repositorio para tener el estado más actualizado
     final fresh = await sl<PetRepository>().getActivePet();
     if (fresh == null) return;
 
