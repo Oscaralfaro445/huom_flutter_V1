@@ -1,50 +1,57 @@
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../store/presentation/providers/coins_provider.dart';
-import '../../../memorial/presentation/screens/memorial_screen.dart';
+
 import '../../../../core/theme/app_colors.dart';
+import '../../../memorial/presentation/screens/memorial_screen.dart';
+import '../../../store/presentation/providers/coins_provider.dart';
 import '../../domain/entities/pet.dart';
 import '../../domain/usecases/feed_pet_usecase.dart';
 import '../providers/pet_provider.dart';
-import '../widgets/stats_bar_widget.dart';
 import '../widgets/action_buttons_widget.dart';
+import '../widgets/stats_bar_widget.dart';
+import '../../../../game/pet_flame_game.dart';
 import 'jump_rope_screen.dart';
+import 'mutation_screen.dart';
 
-class GameScreen extends ConsumerWidget {
+class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
 
-  String _getWarningMessage(Pet pet) {
-    if (pet.stats.health < 20) return '⚠ Tu mascota está enferma';
-    if (pet.stats.hunger < 25) return '⚠ Tu mascota tiene mucha hambre';
-    if (pet.stats.sleep < 15) return '⚠ Tu mascota está agotada';
-    return '';
-  }
+  @override
+  ConsumerState<GameScreen> createState() => _GameScreenState();
+}
 
-  String _getTimeOfDayBackground() {
-    final hour = DateTime.now().hour;
-    if (hour >= 6 && hour < 12) return '🌅';
-    if (hour >= 12 && hour < 19) return '☀️';
-    return '🌙';
-  }
+class _GameScreenState extends ConsumerState<GameScreen> {
+  PetFlameGame? _game;
 
-  String _getPetEmoji(Pet pet) {
-    if (pet.state == PetState.dead) return '💀';
-    if (pet.state == PetState.sick) return '🤒';
-    if (pet.state == PetState.stressed) return '😰';
-    if (pet.stats.hunger > 80 && pet.stats.mood > 80) return '🤩';
-    return '😊';
-  }
-
-  Color _getBackgroundColor() {
-    final hour = DateTime.now().hour;
-    if (hour >= 6 && hour < 12) return const Color(0xFF1A2A4A);
-    if (hour >= 12 && hour < 19) return const Color(0xFF1A1A2E);
-    return const Color(0xFF0A0A1A);
+  // Inicializa el juego Flame la primera vez que tenemos una mascota.
+  void _ensureGame(Pet pet) {
+    _game ??= PetFlameGame(pet);
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final petAsync = ref.watch(petActionsProvider);
+
+    // Escucha evoluciones para abrir MutationScreen
+    ref.listen(evolutionEventProvider, (_, mutation) {
+      if (mutation == null) return;
+      // Consumir el evento antes de navegar para evitar duplicados
+      ref.read(evolutionEventProvider.notifier).state = null;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => MutationScreen(mutation: mutation),
+        ),
+      );
+    });
+
+    // Sincroniza el juego Flame con el estado de Riverpod
+    ref.listen(petActionsProvider, (_, next) {
+      final pet = next.valueOrNull;
+      if (pet != null && _game != null) {
+        _game!.updatePet(pet);
+      }
+    });
 
     return petAsync.when(
       loading: () => const Scaffold(
@@ -66,18 +73,19 @@ class GameScreen extends ConsumerWidget {
             ),
           );
         }
-        return _buildGameScreen(context, ref, pet);
+        _ensureGame(pet);
+        return _buildGameScreen(context, pet);
       },
     );
   }
 
-  Widget _buildGameScreen(BuildContext context, WidgetRef ref, Pet pet) {
+  Widget _buildGameScreen(BuildContext context, Pet pet) {
     return Scaffold(
       backgroundColor: _getBackgroundColor(),
       body: SafeArea(
         child: Column(
           children: [
-            // Header
+            // ── Header ──────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
@@ -94,7 +102,7 @@ class GameScreen extends ConsumerWidget {
                   Row(
                     children: [
                       Text(
-                        _getTimeOfDayBackground(),
+                        _getTimeOfDayIcon(),
                         style: const TextStyle(fontSize: 18),
                       ),
                       const SizedBox(width: 8),
@@ -134,17 +142,12 @@ class GameScreen extends ConsumerWidget {
                         },
                       ),
                       GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const MemorialScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          '🪦',
-                          style: TextStyle(fontSize: 20),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (_) => const MemorialScreen()),
                         ),
+                        child: const Text('🪦',
+                            style: TextStyle(fontSize: 20)),
                       ),
                     ],
                   ),
@@ -152,7 +155,7 @@ class GameScreen extends ConsumerWidget {
               ),
             ),
 
-            // Barras de stats
+            // ── Barras de stats ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: StatsBarWidget(
@@ -163,21 +166,20 @@ class GameScreen extends ConsumerWidget {
               ),
             ),
 
-            // Banner de advertencia
-            if (pet.stats.hunger < 25 ||
-                pet.stats.sleep < 15 ||
-                pet.stats.health < 20)
+            // ── Banner de advertencia ────────────────────────────────────────
+            if (pet.stats.isCritical)
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: AppColors.statCritical.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.statCritical, width: 1),
+                    border:
+                        Border.all(color: AppColors.statCritical, width: 1),
                   ),
                   child: Text(
                     _getWarningMessage(pet),
@@ -193,7 +195,7 @@ class GameScreen extends ConsumerWidget {
 
             const SizedBox(height: 8),
 
-            // Área principal de la mascota
+            // ── Área principal: Flame game ───────────────────────────────────
             Expanded(
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -202,43 +204,55 @@ class GameScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.surface, width: 2),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      child: Text(
-                        _getPetEmoji(pet),
-                        key: ValueKey(pet.state),
-                        style: const TextStyle(fontSize: 100),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Stack(
+                    children: [
+                      // Juego Flame (fondo de bioma + mascota animada)
+                      if (_game != null)
+                        GameWidget(game: _game!)
+                      else
+                        const Center(
+                          child: CircularProgressIndicator(
+                              color: AppColors.primary),
+                        ),
+
+                      // Texto de mutación y etapa encima del juego
+                      Positioned(
+                        bottom: 12,
+                        left: 0,
+                        right: 0,
+                        child: Column(
+                          children: [
+                            Text(
+                              pet.mutation.displayName,
+                              style: const TextStyle(
+                                fontSize: 9,
+                                color: AppColors.primary,
+                                fontFamily: 'PressStart2P',
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _getStageName(pet.stage),
+                              style: const TextStyle(
+                                fontSize: 8,
+                                color: AppColors.textSecondary,
+                                fontFamily: 'PressStart2P',
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _getMutationName(pet.mutation),
-                      style: const TextStyle(
-                        fontSize: 9,
-                        color: AppColors.primary,
-                        fontFamily: 'PressStart2P',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _getStageName(pet.stage),
-                      style: const TextStyle(
-                        fontSize: 8,
-                        color: AppColors.textSecondary,
-                        fontFamily: 'PressStart2P',
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
 
             const SizedBox(height: 8),
 
-            // Botón minijuego
+            // ── Botón minijuego ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: SizedBox(
@@ -247,10 +261,8 @@ class GameScreen extends ConsumerWidget {
                   onPressed: () async {
                     await Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => const JumpRopeScreen(),
-                      ),
+                          builder: (_) => const JumpRopeScreen()),
                     );
-                    // Refrescar monedas al volver
                     ref.read(coinsProvider.notifier).refresh();
                   },
                   icon: const Text('🎮', style: TextStyle(fontSize: 16)),
@@ -264,7 +276,8 @@ class GameScreen extends ConsumerWidget {
                   ),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    side: const BorderSide(color: AppColors.statPlay, width: 2),
+                    side:
+                        const BorderSide(color: AppColors.statPlay, width: 2),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -275,17 +288,22 @@ class GameScreen extends ConsumerWidget {
 
             const SizedBox(height: 8),
 
-            // Botones de acción
+            // ── Botones de acción ────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ActionButtonsWidget(
-                onFeed: () => ref
-                    .read(petActionsProvider.notifier)
-                    .feedPet(FoodItem.basicFood),
+                onFeed: () {
+                  _game?.updatePet; // asegura sync visual
+                  ref
+                      .read(petActionsProvider.notifier)
+                      .feedPet(FoodItem.basicFood);
+                },
                 onPlay: () =>
                     ref.read(petActionsProvider.notifier).playWithPet(),
-                onBathe: () => ref.read(petActionsProvider.notifier).bathePet(),
-                onSleep: () => ref.read(petActionsProvider.notifier).sleepPet(),
+                onBathe: () =>
+                    ref.read(petActionsProvider.notifier).bathePet(),
+                onSleep: () =>
+                    ref.read(petActionsProvider.notifier).sleepPet(),
               ),
             ),
 
@@ -296,24 +314,33 @@ class GameScreen extends ConsumerWidget {
     );
   }
 
-  String _getMutationName(PetMutation mutation) {
-    return switch (mutation) {
-      PetMutation.slimeBit => 'Slime Bit',
-      PetMutation.cactusRex => 'Cactus Rex',
-      PetMutation.aquaSlime => 'Aqua Slime',
-      PetMutation.thunderLeaf => 'Thunder Leaf',
-      PetMutation.blossom => 'Blossom',
-      PetMutation.shadowBone => 'Shadow Bone',
-      PetMutation.glitchPet => 'Glitch Pet',
-    };
+  // ─── Helpers ────────────────────────────────────────────────────────────────
+
+  String _getWarningMessage(Pet pet) {
+    if (pet.stats.health < 20) return '⚠ Tu mascota está enferma';
+    if (pet.stats.hunger < 25) return '⚠ Tu mascota tiene mucha hambre';
+    if (pet.stats.sleep < 15) return '⚠ Tu mascota está agotada';
+    return '';
   }
 
-  String _getStageName(PetStage stage) {
-    return switch (stage) {
-      PetStage.egg => '[ Huevo ]',
-      PetStage.baby => '[ Cría ]',
-      PetStage.adult => '[ Adulto ]',
-      PetStage.elder => '[ Anciano ]',
-    };
+  String _getTimeOfDayIcon() {
+    final hour = DateTime.now().hour;
+    if (hour >= 6 && hour < 12) return '🌅';
+    if (hour >= 12 && hour < 19) return '☀️';
+    return '🌙';
   }
+
+  Color _getBackgroundColor() {
+    final hour = DateTime.now().hour;
+    if (hour >= 6 && hour < 12) return const Color(0xFF1A2A4A);
+    if (hour >= 12 && hour < 19) return const Color(0xFF1A1A2E);
+    return const Color(0xFF0A0A1A);
+  }
+
+  String _getStageName(PetStage stage) => switch (stage) {
+        PetStage.egg => '[ Huevo ]',
+        PetStage.baby => '[ Cría ]',
+        PetStage.adult => '[ Adulto ]',
+        PetStage.elder => '[ Anciano ]',
+      };
 }

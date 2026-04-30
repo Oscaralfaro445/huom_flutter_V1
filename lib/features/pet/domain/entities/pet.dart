@@ -99,3 +99,26 @@ class Pet {
     );
   }
 }
+
+extension PetMutationAssets on PetMutation {
+  /// Ruta al sprite sheet 192×192 (grid 4×4, 48px/celda) en assets/sprites/.
+  String get spritePath => switch (this) {
+        PetMutation.slimeBit => 'sprites/slimebit.png',
+        PetMutation.cactusRex => 'sprites/cactusrex.png',
+        PetMutation.aquaSlime => 'sprites/aquaslime.png',
+        PetMutation.thunderLeaf => 'sprites/thunderleaf.png',
+        PetMutation.blossom => 'sprites/blossom.png',
+        PetMutation.shadowBone => 'sprites/shadowbone.png',
+        PetMutation.glitchPet => 'sprites/glitchpet.png',
+      };
+
+  String get displayName => switch (this) {
+        PetMutation.slimeBit => 'Slime Bit',
+        PetMutation.cactusRex => 'Cactus Rex',
+        PetMutation.aquaSlime => 'Aqua Slime',
+        PetMutation.thunderLeaf => 'Thunder Leaf',
+        PetMutation.blossom => 'Blossom',
+        PetMutation.shadowBone => 'Shadow Bone',
+        PetMutation.glitchPet => 'Glitch Pet',
+      };
+}

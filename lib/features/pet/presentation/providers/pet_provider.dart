@@ -21,6 +21,11 @@ final petStreamProvider = StreamProvider<Pet?>((ref) {
 // Provider del memorial de muerte (se llena cuando la mascota muere)
 final deathMemorialProvider = StateProvider<PetMemorial?>((ref) => null);
 
+// Emite la mutación recién obtenida cuando baby→adult.
+// GameScreen lo escucha para mostrar MutationScreen.
+// Se resetea a null después de consumirlo.
+final evolutionEventProvider = StateProvider<PetMutation?>((ref) => null);
+
 final petActionsProvider =
     AsyncNotifierProvider<PetActionsNotifier, Pet?>(PetActionsNotifier.new);
 
@@ -72,6 +77,12 @@ class PetActionsNotifier extends AsyncNotifier<Pet?> {
 
       // Limpiar historial para que no afecte a una vida futura
       await tracker.clearHistory(pet.id);
+
+      // Señalizar la evolución para que GameScreen abra MutationScreen.
+      // Usamos Future.microtask para no modificar otro provider durante build().
+      Future.microtask(
+        () => ref.read(evolutionEventProvider.notifier).state = mutation,
+      );
 
       return pet.copyWith(stage: PetStage.adult, mutation: mutation);
     }
