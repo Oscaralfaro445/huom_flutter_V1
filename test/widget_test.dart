@@ -5,7 +5,7 @@ import 'package:huom/features/pet/presentation/screens/create_pet_screen.dart';
 
 void main() {
   group('CreatePetScreen', () {
-    testWidgets('dado se monta la pantalla, muestra el título HUOM',
+    testWidgets('dado se monta la pantalla, muestra título y selector',
         (tester) async {
       // Arrange
       await tester.pumpWidget(
@@ -17,10 +17,11 @@ void main() {
       // Act / Assert
       expect(find.text('HUOM'), findsOneWidget);
       expect(find.text('Tu mascota virtual'), findsOneWidget);
-      expect(find.text('🥚'), findsOneWidget);
+      expect(find.text('ELIGE TU MASCOTA'), findsOneWidget);
+      expect(find.text('NOMBRE'), findsOneWidget);
     });
 
-    testWidgets('dado nombre vacío, botón no dispara navegación',
+    testWidgets('dado nada seleccionado, el botón ¡COMENZAR! está deshabilitado',
         (tester) async {
       // Arrange
       await tester.pumpWidget(
@@ -29,15 +30,14 @@ void main() {
         ),
       );
 
-      // Act
-      await tester.tap(find.text('¡Comenzar!'));
-      await tester.pump();
-
-      // Assert: se queda en la misma pantalla
-      expect(find.text('HUOM'), findsOneWidget);
+      // Assert
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(button.onPressed, isNull);
+      expect(find.text('¡COMENZAR!'), findsOneWidget);
     });
 
-    testWidgets('caso borde: maxLength=12 limita el TextField', (tester) async {
+    testWidgets('caso borde: TextField está limitado a 12 caracteres',
+        (tester) async {
       // Arrange
       await tester.pumpWidget(
         const ProviderScope(
