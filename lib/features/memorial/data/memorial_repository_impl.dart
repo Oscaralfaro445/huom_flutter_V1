@@ -1,5 +1,4 @@
 import 'package:hive/hive.dart';
-import 'package:uuid/uuid.dart';
 import '../domain/memorial_repository.dart';
 import '../domain/pet_memorial.dart';
 import '../domain/pet_memorial_model.dart';
@@ -14,7 +13,7 @@ class MemorialRepositoryImpl implements MemorialRepository {
   Future<void> saveMemorial(PetMemorial memorial) async {
     final box = await _box;
     final model = PetMemorialModel()
-      ..id = const Uuid().v4()
+      ..id = memorial.id
       ..petName = memorial.petName
       ..mutationName = memorial.mutationName
       ..causeOfDeath = memorial.causeOfDeath
