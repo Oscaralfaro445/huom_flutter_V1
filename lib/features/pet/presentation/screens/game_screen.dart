@@ -6,9 +6,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../memorial/presentation/screens/memorial_screen.dart';
 import '../../../store/presentation/providers/coins_provider.dart';
 import '../../domain/entities/pet.dart';
-import '../../domain/usecases/feed_pet_usecase.dart';
 import '../providers/pet_provider.dart';
 import '../widgets/action_buttons_widget.dart';
+import '../widgets/food_menu_sheet.dart';
+import '../widgets/games_menu_sheet.dart';
 import '../widgets/stats_bar_widget.dart';
 import '../../../../game/pet_flame_game.dart';
 import 'jump_rope_screen.dart';
@@ -252,22 +253,16 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
             const SizedBox(height: 8),
 
-            // ── Botón minijuego ──────────────────────────────────────────────
+            // ── Botón Minijuegos ─────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                          builder: (_) => const JumpRopeScreen()),
-                    );
-                    ref.read(coinsProvider.notifier).refresh();
-                  },
+                  onPressed: _openGamesMenu,
                   icon: const Text('🎮', style: TextStyle(fontSize: 16)),
                   label: const Text(
-                    'Jump Rope',
+                    'Minijuegos',
                     style: TextStyle(
                       fontFamily: 'PressStart2P',
                       fontSize: 10,
@@ -292,9 +287,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ActionButtonsWidget(
-                onFeed: () => ref
-                    .read(petActionsProvider.notifier)
-                    .feedPet(FoodItem.basicFood),
+                onFeed: _openFoodMenu,
                 onPlay: () =>
                     ref.read(petActionsProvider.notifier).playWithPet(),
                 onBathe: () =>
@@ -309,6 +302,29 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         ),
       ),
     );
+  }
+
+  // ─── Acciones de menú ──────────────────────────────────────────────────────
+
+  Future<void> _openFoodMenu() async {
+    final food = await showFoodMenu(context);
+    if (food == null) return;
+    await ref.read(petActionsProvider.notifier).feedPet(food);
+  }
+
+  Future<void> _openGamesMenu() async {
+    final game = await showGamesMenu(context);
+    if (game == null) return;
+    if (!mounted) return;
+    switch (game) {
+      case GameId.jumpRope:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const JumpRopeScreen()),
+        );
+        if (!mounted) return;
+        ref.read(coinsProvider.notifier).refresh();
+        break;
+    }
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
