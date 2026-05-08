@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../core/theme/app_colors.dart';
+import '../../domain/entities/pet.dart';
 import '../providers/pet_provider.dart';
+import '../widgets/pet_picker_widget.dart';
 
 class CreatePetScreen extends ConsumerStatefulWidget {
   const CreatePetScreen({super.key});
@@ -12,6 +15,7 @@ class CreatePetScreen extends ConsumerStatefulWidget {
 
 class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
   final TextEditingController _nameController = TextEditingController();
+  PetMutation? _selectedMutation;
   bool _isLoading = false;
 
   @override
@@ -20,13 +24,17 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
     super.dispose();
   }
 
-  Future<void> _createPet() async {
-    final name = _nameController.text.trim();
-    if (name.isEmpty) return;
+  bool get _canSubmit =>
+      _nameController.text.trim().isNotEmpty && _selectedMutation != null;
 
+  Future<void> _createPet() async {
+    if (!_canSubmit) return;
     setState(() => _isLoading = true);
-    await ref.read(petActionsProvider.notifier).createPet(name);
-    setState(() => _isLoading = false);
+    await ref.read(petActionsProvider.notifier).createPet(
+          _nameController.text.trim(),
+          mutation: _selectedMutation,
+        );
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
@@ -34,73 +42,80 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'HUOM',
-                style: TextStyle(
-                  fontSize: 36,
-                  color: AppColors.primary,
-                  fontFamily: 'PressStart2P',
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Tu mascota virtual',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppColors.textSecondary,
-                  fontFamily: 'PressStart2P',
-                ),
-              ),
-              const SizedBox(height: 60),
-              // Huevo placeholder
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(60),
-                  border: Border.all(
+              // ── Encabezado ─────────────────────────────────────────────
+              const Center(
+                child: Text(
+                  'HUOM',
+                  style: TextStyle(
+                    fontSize: 30,
                     color: AppColors.primary,
-                    width: 3,
+                    fontFamily: 'PressStart2P',
                   ),
                 ),
-                child: const Center(
-                  child: Text('🥚', style: TextStyle(fontSize: 60)),
+              ),
+              const SizedBox(height: 10),
+              const Center(
+                child: Text(
+                  'Tu mascota virtual',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: AppColors.textSecondary,
+                    fontFamily: 'PressStart2P',
+                  ),
                 ),
               ),
-              const SizedBox(height: 60),
+              const SizedBox(height: 28),
+
+              // ── Selector de mascota ───────────────────────────────────
               const Text(
-                'Dale un nombre\na tu mascota',
+                'ELIGE TU MASCOTA',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 11,
                   color: AppColors.textPrimary,
                   fontFamily: 'PressStart2P',
-                  height: 1.8,
                 ),
               ),
+              const SizedBox(height: 14),
+              PetPickerWidget(
+                selected: _selectedMutation,
+                onSelect: (m) => setState(() => _selectedMutation = m),
+              ),
               const SizedBox(height: 24),
+
+              // ── Nombre ─────────────────────────────────────────────────
+              const Text(
+                'NOMBRE',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textPrimary,
+                  fontFamily: 'PressStart2P',
+                ),
+              ),
+              const SizedBox(height: 12),
               TextField(
                 controller: _nameController,
                 maxLength: 12,
                 textAlign: TextAlign.center,
+                onChanged: (_) => setState(() {}),
                 style: const TextStyle(
                   fontFamily: 'PressStart2P',
-                  fontSize: 14,
+                  fontSize: 13,
                   color: AppColors.textPrimary,
                 ),
                 decoration: InputDecoration(
                   counterText: '',
-                  hintText: 'Nombre...',
+                  hintText: 'Tu mascota...',
                   hintStyle: const TextStyle(
                     color: AppColors.textSecondary,
                     fontFamily: 'PressStart2P',
-                    fontSize: 14,
+                    fontSize: 12,
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -120,13 +135,18 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
                   fillColor: AppColors.surface,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // ── Botón Comenzar ────────────────────────────────────────
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _createPet,
+                  onPressed:
+                      (_isLoading || !_canSubmit) ? null : _createPet,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
+                    disabledBackgroundColor:
+                        AppColors.primary.withValues(alpha: 0.35),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -142,7 +162,7 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
                           ),
                         )
                       : const Text(
-                          '¡Comenzar!',
+                          '¡COMENZAR!',
                           style: TextStyle(
                             fontFamily: 'PressStart2P',
                             fontSize: 12,
