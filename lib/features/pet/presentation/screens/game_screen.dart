@@ -292,12 +292,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ActionButtonsWidget(
-                onFeed: () {
-                  _game?.updatePet; // asegura sync visual
-                  ref
-                      .read(petActionsProvider.notifier)
-                      .feedPet(FoodItem.basicFood);
-                },
+                onFeed: () => ref
+                    .read(petActionsProvider.notifier)
+                    .feedPet(FoodItem.basicFood),
                 onPlay: () =>
                     ref.read(petActionsProvider.notifier).playWithPet(),
                 onBathe: () =>
