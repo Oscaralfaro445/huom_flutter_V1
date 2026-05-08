@@ -108,10 +108,10 @@ class PetActionsNotifier extends AsyncNotifier<Pet?> {
     ref.read(deathMemorialProvider.notifier).state = memorial;
   }
 
-  Future<void> createPet(String name) async {
+  Future<void> createPet(String name, {PetMutation? mutation}) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => sl<CreatePetUseCase>().call(name),
+      () => sl<CreatePetUseCase>().call(name, mutation: mutation),
     );
   }
 
