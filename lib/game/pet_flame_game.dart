@@ -22,6 +22,9 @@ class PetFlameGame extends FlameGame {
 
   @override
   Future<void> onLoad() async {
+    // 1. Sobrescribimos el comportamiento por defecto de Flame
+    images.prefix = 'assets/';
+
     await _loadBackground(_pet.biomeId);
 
     _petComponent = PetComponent(pet: _pet, displaySize: Vector2.all(96));
