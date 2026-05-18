@@ -17,6 +17,7 @@ import 'food_drop_screen.dart';
 import 'jump_rope_screen.dart';
 import 'memory_screen.dart';
 import 'mutation_screen.dart';
+import 'sky_jump_screen.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -338,6 +339,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       case GameId.memory:
         await Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const MemoryScreen()),
+        );
+        break;
+      case GameId.skyJump:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const SkyJumpScreen()),
         );
         break;
     }

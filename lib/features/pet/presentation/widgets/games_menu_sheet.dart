@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 
 /// Identifica un minijuego registrado en el menú.
-enum GameId { jumpRope, foodDrop, colorTap, memory }
+enum GameId { jumpRope, foodDrop, colorTap, memory, skyJump }
 
 /// Bottom sheet con la lista de minijuegos disponibles.
 /// Devuelve el [GameId] seleccionado o null si el usuario cierra.
@@ -52,6 +52,14 @@ class _GamesMenuSheet extends StatelessWidget {
       label: 'Memory',
       description: 'Encuentra los pares de mascotas',
       color: AppColors.statHealth,
+      enabled: true,
+    ),
+    _GameInfo(
+      id: GameId.skyJump,
+      icon: '☁️',
+      label: 'Sky Jump',
+      description: 'Salta plataformas y sube lo más alto posible',
+      color: AppColors.statSleep,
       enabled: true,
     ),
   ];
