@@ -15,6 +15,7 @@ class BatheUseCase {
     final decayedPet = _decayService.applyDecay(pet, DateTime.now());
 
     final newStats = decayedPet.stats.copyWith(
+      cleanliness: 100,
       mood: decayedPet.stats.mood + 20,
       health: decayedPet.stats.health + 10,
       sleep: decayedPet.stats.sleep - 5,

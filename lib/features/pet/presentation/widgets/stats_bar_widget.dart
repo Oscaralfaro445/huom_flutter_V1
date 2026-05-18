@@ -6,6 +6,7 @@ class StatsBarWidget extends StatelessWidget {
   final double mood;
   final double play;
   final double sleep;
+  final double cleanliness;
 
   const StatsBarWidget({
     super.key,
@@ -13,12 +14,13 @@ class StatsBarWidget extends StatelessWidget {
     required this.mood,
     required this.play,
     required this.sleep,
+    required this.cleanliness,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.cardBackground.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(12),
@@ -30,6 +32,11 @@ class StatsBarWidget extends StatelessWidget {
           _StatItem(icon: '😊', value: mood, color: AppColors.statMood),
           _StatItem(icon: '🎮', value: play, color: AppColors.statPlay),
           _StatItem(icon: '💤', value: sleep, color: AppColors.statSleep),
+          _StatItem(
+            icon: '🧼',
+            value: cleanliness,
+            color: AppColors.statCleanliness,
+          ),
         ],
       ),
     );
@@ -62,7 +69,7 @@ class _StatItem extends StatelessWidget {
         Text(icon, style: const TextStyle(fontSize: 18)),
         const SizedBox(height: 4),
         SizedBox(
-          width: 50,
+          width: 44,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(

@@ -6,18 +6,22 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../memorial/presentation/screens/memorial_screen.dart';
 import '../../../store/presentation/providers/coins_provider.dart';
 import '../../domain/entities/pet.dart';
+import '../../domain/usecases/feed_pet_usecase.dart';
 import '../providers/pet_provider.dart';
 import '../widgets/action_buttons_widget.dart';
+import '../widgets/action_feedback_overlay.dart';
 import '../widgets/food_menu_sheet.dart';
 import '../widgets/games_menu_sheet.dart';
 import '../widgets/stats_bar_widget.dart';
 import '../../../../game/pet_flame_game.dart';
 import 'color_tap_screen.dart';
+import 'dodge_bombs_screen.dart';
 import 'food_drop_screen.dart';
-import 'jump_rope_screen.dart';
 import 'memory_screen.dart';
 import 'mutation_screen.dart';
+import 'reaction_tap_screen.dart';
 import 'sky_jump_screen.dart';
+import 'whack_a_pet_screen.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -29,9 +33,36 @@ class GameScreen extends ConsumerStatefulWidget {
 class _GameScreenState extends ConsumerState<GameScreen> {
   PetFlameGame? _game;
 
+  // Overlay de feedback efímero (comer/bañar). null cuando no hay animación.
+  Widget? _feedbackOverlay;
+  int _feedbackKey = 0;
+
   // Inicializa el juego Flame la primera vez que tenemos una mascota.
   void _ensureGame(Pet pet) {
     _game ??= PetFlameGame(pet);
+  }
+
+  void _showFeedback({
+    required String emoji,
+    required String label,
+    required Color color,
+  }) {
+    final key = ++_feedbackKey;
+    setState(() {
+      _feedbackOverlay = ActionFeedbackOverlay(
+        key: ValueKey(key),
+        emoji: emoji,
+        label: label,
+        labelColor: color,
+        onCompleted: () {
+          if (!mounted) return;
+          // Solo limpiar si no llegó otra acción encima
+          if (_feedbackKey == key) {
+            setState(() => _feedbackOverlay = null);
+          }
+        },
+      );
+    });
   }
 
   @override
@@ -168,6 +199,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 mood: pet.stats.mood,
                 play: pet.stats.play,
                 sleep: pet.stats.sleep,
+                cleanliness: pet.stats.cleanliness,
               ),
             ),
 
@@ -249,6 +281,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                           ],
                         ),
                       ),
+
+                      // Overlay de feedback (comer / bañar)
+                      if (_feedbackOverlay != null)
+                        Positioned.fill(child: _feedbackOverlay!),
                     ],
                   ),
                 ),
@@ -257,45 +293,15 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
             const SizedBox(height: 8),
 
-            // ── Botón Minijuegos ─────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _openGamesMenu,
-                  icon: const Text('🎮', style: TextStyle(fontSize: 16)),
-                  label: const Text(
-                    'Minijuegos',
-                    style: TextStyle(
-                      fontFamily: 'PressStart2P',
-                      fontSize: 10,
-                      color: AppColors.statPlay,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    side:
-                        const BorderSide(color: AppColors.statPlay, width: 2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
             // ── Botones de acción ────────────────────────────────────────────
+            // "Jugar" abre el menú de minijuegos; ya no hay botón separado.
+            // El stat play sube cuando el jugador termina un minijuego.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ActionButtonsWidget(
                 onFeed: _openFoodMenu,
-                onPlay: () =>
-                    ref.read(petActionsProvider.notifier).playWithPet(),
-                onBathe: () =>
-                    ref.read(petActionsProvider.notifier).bathePet(),
+                onPlay: _openGamesMenu,
+                onBathe: _bathePet,
                 onSleep: () =>
                     ref.read(petActionsProvider.notifier).sleepPet(),
               ),
@@ -313,19 +319,38 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Future<void> _openFoodMenu() async {
     final food = await showFoodMenu(context);
     if (food == null) return;
+    // Disparar feedback inmediatamente (animación sprite + overlay)
+    _game?.triggerEatAnimation();
+    _showFeedback(
+      emoji: _foodEmoji(food),
+      label: '¡ÑAM ÑAM!',
+      color: AppColors.statHunger,
+    );
     await ref.read(petActionsProvider.notifier).feedPet(food);
   }
+
+  Future<void> _bathePet() async {
+    _game?.triggerBatheAnimation();
+    _showFeedback(
+      emoji: '🫧',
+      label: '¡A BAÑARSE!',
+      color: AppColors.statCleanliness,
+    );
+    await ref.read(petActionsProvider.notifier).bathePet();
+  }
+
+  String _foodEmoji(FoodItem food) => switch (food) {
+        FoodItem.snack => '🍪',
+        FoodItem.basicFood => '🍗',
+        FoodItem.premiumFood => '🥩',
+        FoodItem.specialFood => '🍰',
+      };
 
   Future<void> _openGamesMenu() async {
     final game = await showGamesMenu(context);
     if (game == null) return;
     if (!mounted) return;
     switch (game) {
-      case GameId.jumpRope:
-        await Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const JumpRopeScreen()),
-        );
-        break;
       case GameId.foodDrop:
         await Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const FoodDropScreen()),
@@ -346,6 +371,21 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           MaterialPageRoute(builder: (_) => const SkyJumpScreen()),
         );
         break;
+      case GameId.reactionTap:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ReactionTapScreen()),
+        );
+        break;
+      case GameId.whackAPet:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const WhackAPetScreen()),
+        );
+        break;
+      case GameId.dodgeBombs:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const DodgeBombsScreen()),
+        );
+        break;
     }
     if (!mounted) return;
     ref.read(coinsProvider.notifier).refresh();
@@ -357,6 +397,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     if (pet.stats.health < 20) return '⚠ Tu mascota está enferma';
     if (pet.stats.hunger < 25) return '⚠ Tu mascota tiene mucha hambre';
     if (pet.stats.sleep < 15) return '⚠ Tu mascota está agotada';
+    if (pet.stats.cleanliness < 20) return '⚠ Tu mascota necesita un baño';
     return '';
   }
 

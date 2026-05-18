@@ -20,6 +20,11 @@ class StatDecayService {
   static const double _moodDecay = 1.5;
   static const double _playDecay = 2.0;
   static const double _sleepDecay = 2.5;
+  static const double _cleanlinessDecay = 1.8;
+
+  // Penalizaciones cuando la mascota está muy sucia (cleanliness < 25)
+  static const double _dirtyHealthPenalty = 2.0;
+  static const double _dirtyMoodPenalty = 1.5;
 
   /// Aplica el decay basado en tiempo real transcurrido.
   /// Llamar SOLO al abrir la app, nunca con un Timer activo.
@@ -39,15 +44,26 @@ class StatDecayService {
 
     final mutMult = _getMutationMultipliers(pet.mutation);
 
+    final newCleanliness = pet.stats.cleanliness -
+        (_cleanlinessDecay * hoursElapsed * stageMult);
+
+    // Si está muy sucia, hay penalización extra a health y mood
+    final isDirty = newCleanliness < 25;
+    final healthPenalty = isDirty ? _dirtyHealthPenalty * hoursElapsed : 0.0;
+    final moodPenalty = isDirty ? _dirtyMoodPenalty * hoursElapsed : 0.0;
+
     final newStats = pet.stats.copyWith(
       hunger: pet.stats.hunger -
           (_hungerDecay * hoursElapsed * stageMult * mutMult.hunger),
       mood: pet.stats.mood -
-          (_moodDecay * hoursElapsed * stageMult * mutMult.mood),
+          (_moodDecay * hoursElapsed * stageMult * mutMult.mood) -
+          moodPenalty,
       play: pet.stats.play -
           (_playDecay * hoursElapsed * stageMult * mutMult.play),
       sleep: pet.stats.sleep -
           (_sleepDecay * hoursElapsed * stageMult * mutMult.sleep),
+      health: pet.stats.health - healthPenalty,
+      cleanliness: newCleanliness,
     );
 
     final newState = _evaluateState(newStats, hoursElapsed, pet);
@@ -67,7 +83,9 @@ class StatDecayService {
       return PetState.dead;
     }
     if (stats.health < 20) return PetState.sick;
-    if (stats.hunger < 25 || stats.sleep < 15) return PetState.stressed;
+    if (stats.hunger < 25 || stats.sleep < 15 || stats.cleanliness < 15) {
+      return PetState.stressed;
+    }
     return PetState.happy;
   }
 

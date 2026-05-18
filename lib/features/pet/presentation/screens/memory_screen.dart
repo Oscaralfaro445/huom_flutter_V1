@@ -51,12 +51,12 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
     if (mounted) setState(() {});
   }
 
-  // Curva específica para Memory: el score llega a 200 (40 - moves) * 5.
-  // Mapeamos a la misma escala de monedas que los otros juegos.
+  // Curva para Memory con 6 pares: score max teórico es 120 (sin errores).
+  // Score típico oscila entre 30 (mucho ensayo y error) y 100 (buena memoria).
   int _calculateCoinsMemory(int score) {
-    if (score >= 150) return 30;
-    if (score >= 100) return 20;
-    if (score >= 50) return 15;
+    if (score >= 90) return 30;
+    if (score >= 60) return 20;
+    if (score >= 30) return 15;
     return 5;
   }
 
@@ -121,7 +121,7 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
                     child: GridView.builder(
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 4,
+                        crossAxisCount: 3,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
                       ),

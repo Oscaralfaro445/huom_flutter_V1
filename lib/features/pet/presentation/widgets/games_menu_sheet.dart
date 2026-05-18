@@ -3,114 +3,25 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 
 /// Identifica un minijuego registrado en el menú.
-enum GameId { jumpRope, foodDrop, colorTap, memory, skyJump }
+enum GameId {
+  foodDrop,
+  colorTap,
+  memory,
+  skyJump,
+  reactionTap,
+  whackAPet,
+  dodgeBombs,
+}
 
 /// Bottom sheet con la lista de minijuegos disponibles.
 /// Devuelve el [GameId] seleccionado o null si el usuario cierra.
 Future<GameId?> showGamesMenu(BuildContext context) {
   return showModalBottomSheet<GameId>(
     context: context,
-    backgroundColor: AppColors.cardBackground,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
     builder: (_) => const _GamesMenuSheet(),
   );
-}
-
-class _GamesMenuSheet extends StatelessWidget {
-  const _GamesMenuSheet();
-
-  static const _games = <_GameInfo>[
-    _GameInfo(
-      id: GameId.jumpRope,
-      icon: '🪢',
-      label: 'Jump Rope',
-      description: 'Salta la cuerda y gana monedas',
-      color: AppColors.statPlay,
-      enabled: true,
-    ),
-    _GameInfo(
-      id: GameId.foodDrop,
-      icon: '🍔',
-      label: 'Food Drop',
-      description: 'Atrapa la comida, esquiva las bombas',
-      color: AppColors.statHunger,
-      enabled: true,
-    ),
-    _GameInfo(
-      id: GameId.colorTap,
-      icon: '🎨',
-      label: 'Color Tap',
-      description: 'Toca el color correcto antes del tiempo',
-      color: AppColors.statMood,
-      enabled: true,
-    ),
-    _GameInfo(
-      id: GameId.memory,
-      icon: '🧠',
-      label: 'Memory',
-      description: 'Encuentra los pares de mascotas',
-      color: AppColors.statHealth,
-      enabled: true,
-    ),
-    _GameInfo(
-      id: GameId.skyJump,
-      icon: '☁️',
-      label: 'Sky Jump',
-      description: 'Salta plataformas y sube lo más alto posible',
-      color: AppColors.statSleep,
-      enabled: true,
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.buttonBorder,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 6),
-              child: Text(
-                'MINIJUEGOS',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'PressStart2P',
-                  fontSize: 11,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            for (final g in _games) ...[
-              _GameTile(
-                info: g,
-                onTap: g.enabled
-                    ? () => Navigator.of(context).pop(g.id)
-                    : null,
-              ),
-              const SizedBox(height: 8),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _GameInfo {
@@ -131,59 +42,273 @@ class _GameInfo {
   });
 }
 
-class _GameTile extends StatelessWidget {
-  final _GameInfo info;
-  final VoidCallback? onTap;
+class _GamesMenuSheet extends StatelessWidget {
+  const _GamesMenuSheet();
 
-  const _GameTile({required this.info, required this.onTap});
+  static const _games = <_GameInfo>[
+    _GameInfo(
+      id: GameId.foodDrop,
+      icon: '🍔',
+      label: 'Food Drop',
+      description: 'Atrapa comida',
+      color: AppColors.statHunger,
+      enabled: true,
+    ),
+    _GameInfo(
+      id: GameId.colorTap,
+      icon: '🎨',
+      label: 'Color Tap',
+      description: 'Reflejos rápidos',
+      color: AppColors.statMood,
+      enabled: true,
+    ),
+    _GameInfo(
+      id: GameId.memory,
+      icon: '🧠',
+      label: 'Memory',
+      description: 'Encuentra pares',
+      color: AppColors.statHealth,
+      enabled: true,
+    ),
+    _GameInfo(
+      id: GameId.skyJump,
+      icon: '☁️',
+      label: 'Sky Jump',
+      description: 'Sube alto',
+      color: AppColors.statSleep,
+      enabled: true,
+    ),
+    _GameInfo(
+      id: GameId.reactionTap,
+      icon: '⚡',
+      label: 'Reaction',
+      description: 'Toca rápido',
+      color: AppColors.primary,
+      enabled: true,
+    ),
+    _GameInfo(
+      id: GameId.whackAPet,
+      icon: '🔨',
+      label: 'Whack-A-Pet',
+      description: 'Atrapa mascotas',
+      color: AppColors.statPlay,
+      enabled: true,
+    ),
+    _GameInfo(
+      id: GameId.dodgeBombs,
+      icon: '💣',
+      label: 'Dodge Bombs',
+      description: 'Esquiva bombas',
+      color: AppColors.statCritical,
+      enabled: true,
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final disabled = onTap == null;
-    return Opacity(
-      opacity: disabled ? 0.45 : 1,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: info.color, width: 1.5),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.backgroundSecondary,
+              AppColors.background,
+            ],
           ),
-          child: Row(
-            children: [
-              Text(info.icon, style: const TextStyle(fontSize: 30)),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      info.label.toUpperCase(),
-                      style: TextStyle(
-                        fontFamily: 'PressStart2P',
-                        fontSize: 10,
-                        color: info.color,
-                      ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 48,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: AppColors.textSecondary.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(3),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      info.description,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                // Header
+                Row(
+                  children: [
+                    const Text('🎮', style: TextStyle(fontSize: 26)),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'MINIJUEGOS',
+                          style: TextStyle(
+                            fontFamily: 'PressStart2P',
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_games.where((g) => g.enabled).length} disponibles',
+                          style: const TextStyle(
+                            fontFamily: 'PressStart2P',
+                            fontSize: 7,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: AppColors.textPrimary,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              Icon(
-                disabled ? Icons.lock_outline : Icons.chevron_right,
-                color: AppColors.textSecondary,
-                size: 22,
-              ),
-            ],
+                const SizedBox(height: 20),
+                // Grid de minijuegos (2 columnas)
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _games.length,
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.95,
+                  ),
+                  itemBuilder: (context, i) {
+                    final g = _games[i];
+                    return _GameCard(
+                      info: g,
+                      onTap: g.enabled
+                          ? () => Navigator.of(context).pop(g.id)
+                          : null,
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GameCard extends StatelessWidget {
+  final _GameInfo info;
+  final VoidCallback? onTap;
+
+  const _GameCard({required this.info, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = onTap == null;
+    return Material(
+      color: Colors.transparent,
+      child: Ink(
+        decoration: BoxDecoration(
+          color: disabled
+              ? AppColors.surface.withValues(alpha: 0.4)
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: disabled
+                ? AppColors.buttonBorder.withValues(alpha: 0.3)
+                : info.color,
+            width: 2,
+          ),
+          boxShadow: disabled
+              ? null
+              : [
+                  BoxShadow(
+                    color: info.color.withValues(alpha: 0.18),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          splashColor: info.color.withValues(alpha: 0.2),
+          highlightColor: info.color.withValues(alpha: 0.08),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Icono grande con badge de color
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: disabled
+                        ? AppColors.buttonBackground
+                        : info.color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  alignment: Alignment.center,
+                  child: Opacity(
+                    opacity: disabled ? 0.4 : 1,
+                    child: Text(info.icon, style: const TextStyle(fontSize: 32)),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  info.label.toUpperCase(),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'PressStart2P',
+                    fontSize: 9,
+                    color: disabled ? AppColors.textSecondary : info.color,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  info.description,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 9,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                if (disabled) ...[
+                  const SizedBox(height: 6),
+                  const Icon(
+                    Icons.lock_outline,
+                    size: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),

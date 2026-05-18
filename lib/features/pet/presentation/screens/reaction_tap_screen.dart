@@ -5,19 +5,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/services/coins_service.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../game/minigames/food_drop_game.dart';
-import '../../domain/entities/pet.dart';
+import '../../../../game/minigames/reaction_tap_game.dart';
 import '../providers/pet_provider.dart';
 
-class FoodDropScreen extends ConsumerStatefulWidget {
-  const FoodDropScreen({super.key});
+class ReactionTapScreen extends ConsumerStatefulWidget {
+  const ReactionTapScreen({super.key});
 
   @override
-  ConsumerState<FoodDropScreen> createState() => _FoodDropScreenState();
+  ConsumerState<ReactionTapScreen> createState() => _ReactionTapScreenState();
 }
 
-class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
-  late FoodDropGame _game;
+class _ReactionTapScreenState extends ConsumerState<ReactionTapScreen> {
+  late ReactionTapGame _game;
   bool _gameOver = false;
   int _finalScore = 0;
   int _coinsEarned = 0;
@@ -33,11 +32,7 @@ class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
       _gameOver = false;
       _finalScore = 0;
     });
-    final pet = ref.read(petActionsProvider).valueOrNull;
-    final spritePath =
-        (pet?.mutation ?? PetMutation.slimeBit).spritePath;
-    _game = FoodDropGame(
-      petSpritePath: spritePath,
+    _game = ReactionTapGame(
       onGameOver: (score) {
         final coins = _calculateCoins(score);
         setState(() {
@@ -51,9 +46,9 @@ class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
   }
 
   int _calculateCoins(int score) {
-    if (score >= 20) return 30;
-    if (score >= 10) return 20;
-    if (score >= 5) return 15;
+    if (score >= 25) return 30;
+    if (score >= 15) return 20;
+    if (score >= 7) return 15;
     return 5;
   }
 
@@ -84,7 +79,7 @@ class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
                   ),
                   const SizedBox(width: 12),
                   const Text(
-                    'Food Drop',
+                    'Reaction Tap',
                     style: TextStyle(
                       fontFamily: 'PressStart2P',
                       fontSize: 12,
@@ -95,12 +90,13 @@ class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
               ),
             ),
           ),
-          if (_gameOver) _GameOverOverlay(
-            score: _finalScore,
-            coins: _coinsEarned,
-            onReplay: _startGame,
-            onExit: () => Navigator.of(context).pop(),
-          ),
+          if (_gameOver)
+            _GameOverOverlay(
+              score: _finalScore,
+              coins: _coinsEarned,
+              onReplay: _startGame,
+              onExit: () => Navigator.of(context).pop(),
+            ),
         ],
       ),
     );

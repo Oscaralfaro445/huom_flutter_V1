@@ -7,59 +7,49 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-enum FoodDropState { waiting, playing, gameOver }
+enum DodgeBombsState { waiting, playing, gameOver }
 
-enum _FallingKind { good, bomb }
-
-class _Falling {
-  static const double size = 32;
-
-  final _FallingKind kind;
-  final String emoji;
+class _Bomb {
+  static const double size = 28;
   Offset position;
   final double speed;
-
-  _Falling({
-    required this.kind,
-    required this.emoji,
-    required this.position,
-    required this.speed,
-  });
+  _Bomb({required this.position, required this.speed});
 }
 
-/// Mueve a la mascota izq/der para atrapar comida que cae. Las bombas
-/// terminan el juego. La velocidad aumenta cada 5 puntos.
-class FoodDropGame extends FlameGame with PanDetector, TapCallbacks {
+/// La mascota está en la parte baja de la pantalla y se mueve izq/der
+/// arrastrando. Caen bombas del cielo a velocidad creciente. Cada
+/// bomba esquivada (que sale por debajo) suma 1 punto. Si una bomba
+/// toca a la mascota, game over.
+class DodgeBombsGame extends FlameGame with PanDetector, TapCallbacks {
   final void Function(int score) onGameOver;
   final String petSpritePath;
 
-  FoodDropGame({required this.onGameOver, required this.petSpritePath});
+  DodgeBombsGame({
+    required this.onGameOver,
+    required this.petSpritePath,
+  });
 
-  FoodDropState gameState = FoodDropState.waiting;
+  DodgeBombsState gameState = DodgeBombsState.waiting;
   int score = 0;
 
   final _rng = Random();
-  final _falling = <_Falling>[];
+  final _bombs = <_Bomb>[];
 
   // Mascota
   late double petCenterX;
-  static const _petSize = 72.0;
-  static const _petHitWidth = 64.0;
-  static const _petHitHeight = 56.0;
+  static const _petSize = 64.0;
+  static const _petHitRadius = 26.0;
 
   ui.Image? _petImage;
-  // Sprite sheet 192x192 con grid 4x4 de 48px → primera frame del idle
   static const _frameSize = 48.0;
 
   // Spawner
   double _spawnTimer = 0;
-  double _spawnInterval = 1.1;
-  double _fallSpeed = 130;
+  double _spawnInterval = 0.95;
+  double _fallSpeed = 160;
 
   late TextComponent _scoreText;
   late TextComponent _instructionText;
-
-  static const _goodFoods = ['🍎', '🍔', '🍕', '🍩', '🍰', '🍓', '🥕', '🍌'];
 
   @override
   Color backgroundColor() => const Color(0xFF1A1A2E);
@@ -83,7 +73,7 @@ class FoodDropGame extends FlameGame with PanDetector, TapCallbacks {
     add(_scoreText);
 
     _instructionText = TextComponent(
-      text: 'ARRASTRA a tu mascota',
+      text: 'ARRASTRA para esquivar',
       position: Vector2(size.x / 2, size.y * 0.5),
       anchor: Anchor.topCenter,
       textRenderer: TextPaint(
@@ -112,26 +102,26 @@ class FoodDropGame extends FlameGame with PanDetector, TapCallbacks {
 
   @override
   void onPanUpdate(DragUpdateInfo info) {
-    if (gameState == FoodDropState.gameOver) return;
-    if (gameState == FoodDropState.waiting) _startPlaying();
+    if (gameState == DodgeBombsState.gameOver) return;
+    if (gameState == DodgeBombsState.waiting) _startPlaying();
     petCenterX = (petCenterX + info.delta.global.x)
         .clamp(_petSize / 2, size.x - _petSize / 2);
   }
 
   @override
   void onTapDown(TapDownEvent event) {
-    if (gameState == FoodDropState.waiting) _startPlaying();
+    if (gameState == DodgeBombsState.waiting) _startPlaying();
   }
 
   void _startPlaying() {
-    gameState = FoodDropState.playing;
+    gameState = DodgeBombsState.playing;
     _instructionText.removeFromParent();
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    if (gameState != FoodDropState.playing) return;
+    if (gameState != DodgeBombsState.playing) return;
 
     _spawnTimer += dt;
     if (_spawnTimer >= _spawnInterval) {
@@ -139,67 +129,61 @@ class FoodDropGame extends FlameGame with PanDetector, TapCallbacks {
       _spawn();
     }
 
-    for (final f in _falling) {
-      f.position = Offset(f.position.dx, f.position.dy + f.speed * dt);
+    final petCenter = Offset(petCenterX, size.y * 0.84);
+
+    for (final b in _bombs) {
+      b.position = Offset(b.position.dx, b.position.dy + b.speed * dt);
     }
 
-    // Colisiones con la mascota
-    final hitRect = _petHitRect();
-    _falling.removeWhere((f) {
-      final hit = hitRect.contains(f.position);
-      if (hit) {
-        if (f.kind == _FallingKind.bomb) {
-          _gameOver();
-        } else {
-          score++;
-          _scoreText.text = 'Score: $score';
-          _maybeLevelUp();
-        }
+    // Detectar colisión con la mascota
+    for (final b in _bombs) {
+      final dx = b.position.dx - petCenter.dx;
+      final dy = b.position.dy - petCenter.dy;
+      final dist = sqrt(dx * dx + dy * dy);
+      if (dist < _petHitRadius + _Bomb.size * 0.45) {
+        _gameOver();
+        return;
       }
-      return hit;
-    });
+    }
 
-    _falling.removeWhere((f) => f.position.dy > size.y + 32);
+    // Bombas que salen por debajo: punto y eliminación
+    _bombs.removeWhere((b) {
+      if (b.position.dy > size.y + 32) {
+        score++;
+        _scoreText.text = 'Score: $score';
+        _maybeLevelUp();
+        return true;
+      }
+      return false;
+    });
   }
 
   void _spawn() {
-    final isBomb = _rng.nextDouble() < 0.12 + (score * 0.005).clamp(0, 0.18);
-    final emoji = isBomb ? '💣' : _goodFoods[_rng.nextInt(_goodFoods.length)];
     final x = 24 + _rng.nextDouble() * (size.x - 48);
-    _falling.add(_Falling(
-      kind: isBomb ? _FallingKind.bomb : _FallingKind.good,
-      emoji: emoji,
+    _bombs.add(_Bomb(
       position: Offset(x, -32),
-      speed: _fallSpeed + _rng.nextDouble() * 30,
+      speed: _fallSpeed + _rng.nextDouble() * 40,
     ));
   }
 
   void _maybeLevelUp() {
     if (score % 5 == 0) {
-      _spawnInterval = (_spawnInterval * 0.92).clamp(0.45, 1.1);
-      _fallSpeed = (_fallSpeed + 12).clamp(130, 320);
+      _spawnInterval = (_spawnInterval * 0.92).clamp(0.4, 0.95);
+      _fallSpeed = (_fallSpeed + 14).clamp(160, 360);
     }
   }
 
   void _gameOver() {
-    if (gameState == FoodDropState.gameOver) return;
-    gameState = FoodDropState.gameOver;
+    if (gameState == DodgeBombsState.gameOver) return;
+    gameState = DodgeBombsState.gameOver;
     onGameOver(score);
-  }
-
-  Rect _petHitRect() {
-    return Rect.fromCenter(
-      center: Offset(petCenterX, size.y * 0.82),
-      width: _petHitWidth,
-      height: _petHitHeight,
-    );
   }
 
   @override
   void render(Canvas canvas) {
     super.render(canvas);
     _drawBackground(canvas);
-    _drawFalling(canvas);
+    _drawBombs(canvas);
     _drawPet(canvas);
   }
 
@@ -207,7 +191,7 @@ class FoodDropGame extends FlameGame with PanDetector, TapCallbacks {
     final linePaint = Paint()
       ..color = const Color(0xFF0F3460)
       ..strokeWidth = 2;
-    final groundY = size.y * 0.88;
+    final groundY = size.y * 0.92;
     canvas.drawLine(
       Offset(0, groundY),
       Offset(size.x, groundY),
@@ -215,24 +199,24 @@ class FoodDropGame extends FlameGame with PanDetector, TapCallbacks {
     );
   }
 
-  void _drawFalling(Canvas canvas) {
-    for (final f in _falling) {
+  void _drawBombs(Canvas canvas) {
+    for (final b in _bombs) {
       final tp = TextPainter(
-        text: TextSpan(
-          text: f.emoji,
-          style: const TextStyle(fontSize: _Falling.size),
+        text: const TextSpan(
+          text: '💣',
+          style: TextStyle(fontSize: _Bomb.size),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
       tp.paint(
         canvas,
-        Offset(f.position.dx - _Falling.size / 2, f.position.dy),
+        Offset(b.position.dx - _Bomb.size / 2, b.position.dy - _Bomb.size / 2),
       );
     }
   }
 
   void _drawPet(Canvas canvas) {
-    final center = Offset(petCenterX, size.y * 0.82);
+    final center = Offset(petCenterX, size.y * 0.84);
     final image = _petImage;
     if (image != null) {
       final dst = Rect.fromCenter(
@@ -247,7 +231,6 @@ class FoodDropGame extends FlameGame with PanDetector, TapCallbacks {
         Paint()..filterQuality = FilterQuality.none,
       );
     } else {
-      // Fallback mientras carga el sprite: círculo rosa
       canvas.drawCircle(
         center,
         _petSize / 2,
