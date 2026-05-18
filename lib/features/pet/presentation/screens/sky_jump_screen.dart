@@ -16,7 +16,7 @@ class SkyJumpScreen extends ConsumerStatefulWidget {
 }
 
 class _SkyJumpScreenState extends ConsumerState<SkyJumpScreen> {
-  late SkyJumpGame _game;
+  SkyJumpGame? _game;
   bool _gameOver = false;
   int _finalScore = 0;
   int _coinsEarned = 0;
@@ -28,11 +28,14 @@ class _SkyJumpScreenState extends ConsumerState<SkyJumpScreen> {
   }
 
   void _startGame() {
+    final pet = ref.read(petActionsProvider).valueOrNull;
+    if (pet == null) return;
     setState(() {
       _gameOver = false;
       _finalScore = 0;
     });
     _game = SkyJumpGame(
+      pet: pet,
       onGameOver: (score) {
         final coins = _calculateCoins(score);
         setState(() {
@@ -63,7 +66,12 @@ class _SkyJumpScreenState extends ConsumerState<SkyJumpScreen> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          GameWidget(game: _game),
+          if (_game != null)
+            GameWidget(game: _game!)
+          else
+            const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

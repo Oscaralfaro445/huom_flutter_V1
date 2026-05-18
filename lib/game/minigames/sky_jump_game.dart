@@ -1,9 +1,12 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+
+import '../../features/pet/domain/entities/pet.dart';
 
 enum SkyJumpState { waiting, playing, gameOver }
 
@@ -19,8 +22,9 @@ class _Platform {
 /// se acaba cuando la mascota cae por debajo del viewport.
 class SkyJumpGame extends FlameGame with TapCallbacks, DragCallbacks {
   final void Function(int score) onGameOver;
+  final Pet pet;
 
-  SkyJumpGame({required this.onGameOver});
+  SkyJumpGame({required this.onGameOver, required this.pet});
 
   SkyJumpState gameState = SkyJumpState.waiting;
   int score = 0;
@@ -32,8 +36,14 @@ class SkyJumpGame extends FlameGame with TapCallbacks, DragCallbacks {
   double _velY = 0;
   static const _gravity = 1200.0;
   static const _jumpVelocity = -620.0;
-  static const _petSize = 36.0;
+  static const _petSize = 48.0;
   static const _horizontalSpeed = 220.0;
+
+  // Sprite de la mascota (cargado en onLoad)
+  ui.Image? _petImage;
+  double _animTime = 0;
+  static const _frameSize = 48.0;
+  static const _frameStep = 0.20; // segundos por frame (igual que PetComponent)
 
   // Plataformas (coordenadas en el mundo, se desplazan al subir camera)
   final _rng = Random();
@@ -48,10 +58,17 @@ class SkyJumpGame extends FlameGame with TapCallbacks, DragCallbacks {
   late TextComponent _instructionText;
 
   @override
-  Color backgroundColor() => const Color(0xFF1A1A2E);
+  Color backgroundColor() => const Color(0xFF87CEEB);
 
   @override
   Future<void> onLoad() async {
+    // Carga el sprite sheet de la mascota (etapa egg usa sprite distinto)
+    images.prefix = 'assets/';
+    final path = pet.stage == PetStage.egg
+        ? 'sprites/egg.png'
+        : pet.mutation.spritePath;
+    _petImage = await images.load(path);
+
     petX = size.x / 2;
     petY = size.y * 0.75;
     _velY = _jumpVelocity;
@@ -124,6 +141,7 @@ class SkyJumpGame extends FlameGame with TapCallbacks, DragCallbacks {
   @override
   void update(double dt) {
     super.update(dt);
+    _animTime += dt;
     if (gameState != SkyJumpState.playing) return;
 
     // Movimiento horizontal con wrap (sale por un lado, aparece por el otro)
@@ -190,13 +208,87 @@ class SkyJumpGame extends FlameGame with TapCallbacks, DragCallbacks {
 
   @override
   void render(Canvas canvas) {
+    _drawSky(canvas);
+    _drawClouds(canvas);
     super.render(canvas);
     _drawPlatforms(canvas);
     _drawPet(canvas);
   }
 
+  // ─── Fondo cielo ──────────────────────────────────────────────────────────
+
+  void _drawSky(Canvas canvas) {
+    final rect = Rect.fromLTWH(0, 0, size.x, size.y);
+    const gradient = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        Color(0xFF4FA8E0), // azul cielo
+        Color(0xFF87CEEB), // celeste
+        Color(0xFFD8F0FB), // casi blanco abajo
+      ],
+      stops: [0.0, 0.55, 1.0],
+    );
+    canvas.drawRect(rect, Paint()..shader = gradient.createShader(rect));
+
+    // Sol arriba a la derecha
+    final sunCenter = Offset(size.x - 50, 60);
+    canvas.drawCircle(
+      sunCenter,
+      40,
+      Paint()..color = const Color(0xFFFFE680).withValues(alpha: 0.45),
+    );
+    canvas.drawCircle(
+      sunCenter,
+      28,
+      Paint()..color = const Color(0xFFFFD93D),
+    );
+  }
+
+  // Posiciones base de nubes en el mundo (se repiten verticalmente).
+  // Cada par es (xRatio, worldY).
+  static const _cloudSlots = <(double, double)>[
+    (0.10, 40),
+    (0.65, 130),
+    (0.30, 260),
+    (0.85, 360),
+    (0.05, 480),
+    (0.55, 600),
+  ];
+  static const _cloudCycle = 720.0;
+
+  void _drawClouds(Canvas canvas) {
+    final paint = Paint()..color = Colors.white.withValues(alpha: 0.85);
+    // Parallax: las nubes se mueven al 35% del movimiento de cámara, dando
+    // sensación de profundidad respecto a las plataformas.
+    final parallax = _cameraOffset * 0.35;
+    for (final (xRatio, baseY) in _cloudSlots) {
+      final x = xRatio * size.x;
+      // Wrap-around vertical: la nube vuelve a aparecer arriba al pasar abajo
+      final raw = (baseY - parallax) % _cloudCycle;
+      final yInCycle = raw < 0 ? raw + _cloudCycle : raw;
+      // Mapea [0, _cloudCycle] sobre [-60, size.y + 60]
+      final screenY = -60 + (yInCycle / _cloudCycle) * (size.y + 120);
+      _drawCloud(canvas, Offset(x, screenY), paint);
+    }
+  }
+
+  void _drawCloud(Canvas canvas, Offset c, Paint paint) {
+    canvas.drawCircle(c, 22, paint);
+    canvas.drawCircle(c.translate(-18, 6), 16, paint);
+    canvas.drawCircle(c.translate(18, 6), 16, paint);
+    canvas.drawCircle(c.translate(-6, -10), 14, paint);
+    canvas.drawOval(
+      Rect.fromCenter(center: c.translate(0, 10), width: 70, height: 20),
+      paint,
+    );
+  }
+
+  // ─── Plataformas ──────────────────────────────────────────────────────────
+
   void _drawPlatforms(Canvas canvas) {
-    final paint = Paint()..color = const Color(0xFF4D96FF);
+    final body = Paint()..color = const Color(0xFFFFFFFF);
+    final shadow = Paint()..color = const Color(0xFFB0D8E8);
     for (final p in _platforms) {
       final rect = Rect.fromLTWH(
         p.position.dx,
@@ -204,47 +296,46 @@ class SkyJumpGame extends FlameGame with TapCallbacks, DragCallbacks {
         p.width,
         _platformHeight,
       );
+      // Sombra inferior (efecto nubecita)
       canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(4)),
-        paint,
+        RRect.fromRectAndRadius(
+          rect.translate(0, 3),
+          const Radius.circular(6),
+        ),
+        shadow,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(6)),
+        body,
       );
     }
   }
 
+  // ─── Mascota ─────────────────────────────────────────────────────────────
+
   void _drawPet(Canvas canvas) {
+    final img = _petImage;
+    if (img == null) return;
+
     final screenY = petY - _cameraOffset;
-    final center = Offset(petX, screenY);
+    final isEgg = pet.stage == PetStage.egg;
+    final framesInRow = isEgg ? 2 : 4;
+    final frameIdx = ((_animTime / _frameStep).floor()) % framesInRow;
 
-    final body = Paint()..color = const Color(0xFF6BCB77);
-    canvas.drawCircle(center, _petSize / 2, body);
-
-    // Ojos
-    final eye = Paint()..color = Colors.white;
-    canvas.drawCircle(center.translate(-6, -4), 4, eye);
-    canvas.drawCircle(center.translate(6, -4), 4, eye);
-    final pupil = Paint()..color = Colors.black;
-    canvas.drawCircle(center.translate(-6, -3), 2, pupil);
-    canvas.drawCircle(center.translate(6, -3), 2, pupil);
-
-    // Boca según dirección de movimiento vertical
-    final mouth = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    if (_velY < 0) {
-      // subiendo: cara emocionada (O)
-      canvas.drawCircle(center.translate(0, 6), 3, mouth);
-    } else {
-      // cayendo: sonrisa
-      final path = Path()
-        ..moveTo(center.dx - 5, center.dy + 5)
-        ..quadraticBezierTo(
-          center.dx,
-          center.dy + 10,
-          center.dx + 5,
-          center.dy + 5,
-        );
-      canvas.drawPath(path, mouth);
-    }
+    final src = Rect.fromLTWH(
+      frameIdx * _frameSize,
+      0,
+      _frameSize,
+      _frameSize,
+    );
+    const renderSize = _petSize * 1.4;
+    final dst = Rect.fromCenter(
+      center: Offset(petX, screenY),
+      width: renderSize,
+      height: renderSize,
+    );
+    // Pixel art: sin filtro para mantener crujiente
+    final paint = Paint()..filterQuality = FilterQuality.none;
+    canvas.drawImageRect(img, src, dst, paint);
   }
 }
