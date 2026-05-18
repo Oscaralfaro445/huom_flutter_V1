@@ -16,6 +16,7 @@ extension PetMapper on PetModel {
         play: play,
         sleep: sleep,
         health: health,
+        cleanliness: cleanliness,
       ),
       lastInteraction: lastInteraction,
       createdAt: createdAt,
@@ -38,6 +39,7 @@ extension PetEntityMapper on Pet {
       ..play = stats.play
       ..sleep = stats.sleep
       ..health = stats.health
+      ..cleanliness = stats.cleanliness
       ..lastInteraction = lastInteraction
       ..createdAt = createdAt
       ..daysAlive = daysAlive;

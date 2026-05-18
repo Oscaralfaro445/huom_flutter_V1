@@ -50,6 +50,22 @@ class PetFlameGame extends FlameGame {
     _applyUpdate(pet);
   }
 
+  /// Reproduce la animación de comer del sprite durante un instante.
+  void triggerEatAnimation() {
+    _petComponent?.playEatAnimation();
+  }
+
+  /// Reproduce la animación de "tranquilo" (sleep frames) mientras la mascota
+  /// se baña, y vuelve al estado normal cuando termina la animación overlay.
+  void triggerBatheAnimation({
+    Duration duration = const Duration(milliseconds: 1200),
+  }) {
+    final c = _petComponent;
+    if (c == null) return;
+    c.playSleepAnimation();
+    Future.delayed(duration, () => c.resetToDefault());
+  }
+
   // ─── Privado ─────────────────────────────────────────────────────────────
 
   void _applyUpdate(Pet pet) {

@@ -45,4 +45,7 @@ class PetModel extends HiveObject {
 
   @HiveField(13)
   late int daysAlive;
+
+  @HiveField(14)
+  double cleanliness = 100;
 }

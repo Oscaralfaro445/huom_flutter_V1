@@ -6,8 +6,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../memorial/presentation/screens/memorial_screen.dart';
 import '../../../store/presentation/providers/coins_provider.dart';
 import '../../domain/entities/pet.dart';
+import '../../domain/usecases/feed_pet_usecase.dart';
 import '../providers/pet_provider.dart';
 import '../widgets/action_buttons_widget.dart';
+import '../widgets/action_feedback_overlay.dart';
 import '../widgets/food_menu_sheet.dart';
 import '../widgets/games_menu_sheet.dart';
 import '../widgets/stats_bar_widget.dart';
@@ -31,9 +33,36 @@ class GameScreen extends ConsumerStatefulWidget {
 class _GameScreenState extends ConsumerState<GameScreen> {
   PetFlameGame? _game;
 
+  // Overlay de feedback efímero (comer/bañar). null cuando no hay animación.
+  Widget? _feedbackOverlay;
+  int _feedbackKey = 0;
+
   // Inicializa el juego Flame la primera vez que tenemos una mascota.
   void _ensureGame(Pet pet) {
     _game ??= PetFlameGame(pet);
+  }
+
+  void _showFeedback({
+    required String emoji,
+    required String label,
+    required Color color,
+  }) {
+    final key = ++_feedbackKey;
+    setState(() {
+      _feedbackOverlay = ActionFeedbackOverlay(
+        key: ValueKey(key),
+        emoji: emoji,
+        label: label,
+        labelColor: color,
+        onCompleted: () {
+          if (!mounted) return;
+          // Solo limpiar si no llegó otra acción encima
+          if (_feedbackKey == key) {
+            setState(() => _feedbackOverlay = null);
+          }
+        },
+      );
+    });
   }
 
   @override
@@ -170,6 +199,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 mood: pet.stats.mood,
                 play: pet.stats.play,
                 sleep: pet.stats.sleep,
+                cleanliness: pet.stats.cleanliness,
               ),
             ),
 
@@ -251,6 +281,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                           ],
                         ),
                       ),
+
+                      // Overlay de feedback (comer / bañar)
+                      if (_feedbackOverlay != null)
+                        Positioned.fill(child: _feedbackOverlay!),
                     ],
                   ),
                 ),
@@ -267,8 +301,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               child: ActionButtonsWidget(
                 onFeed: _openFoodMenu,
                 onPlay: _openGamesMenu,
-                onBathe: () =>
-                    ref.read(petActionsProvider.notifier).bathePet(),
+                onBathe: _bathePet,
                 onSleep: () =>
                     ref.read(petActionsProvider.notifier).sleepPet(),
               ),
@@ -286,8 +319,32 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Future<void> _openFoodMenu() async {
     final food = await showFoodMenu(context);
     if (food == null) return;
+    // Disparar feedback inmediatamente (animación sprite + overlay)
+    _game?.triggerEatAnimation();
+    _showFeedback(
+      emoji: _foodEmoji(food),
+      label: '¡ÑAM ÑAM!',
+      color: AppColors.statHunger,
+    );
     await ref.read(petActionsProvider.notifier).feedPet(food);
   }
+
+  Future<void> _bathePet() async {
+    _game?.triggerBatheAnimation();
+    _showFeedback(
+      emoji: '🫧',
+      label: '¡A BAÑARSE!',
+      color: AppColors.statCleanliness,
+    );
+    await ref.read(petActionsProvider.notifier).bathePet();
+  }
+
+  String _foodEmoji(FoodItem food) => switch (food) {
+        FoodItem.snack => '🍪',
+        FoodItem.basicFood => '🍗',
+        FoodItem.premiumFood => '🥩',
+        FoodItem.specialFood => '🍰',
+      };
 
   Future<void> _openGamesMenu() async {
     final game = await showGamesMenu(context);
@@ -340,6 +397,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     if (pet.stats.health < 20) return '⚠ Tu mascota está enferma';
     if (pet.stats.hunger < 25) return '⚠ Tu mascota tiene mucha hambre';
     if (pet.stats.sleep < 15) return '⚠ Tu mascota está agotada';
+    if (pet.stats.cleanliness < 20) return '⚠ Tu mascota necesita un baño';
     return '';
   }
 

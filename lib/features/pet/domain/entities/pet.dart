@@ -18,6 +18,7 @@ class PetStats {
   final double play;
   final double sleep;
   final double health;
+  final double cleanliness;
 
   const PetStats({
     this.hunger = 70,
@@ -25,6 +26,7 @@ class PetStats {
     this.play = 70,
     this.sleep = 70,
     this.health = 100,
+    this.cleanliness = 100,
   });
 
   PetStats copyWith({
@@ -33,6 +35,7 @@ class PetStats {
     double? play,
     double? sleep,
     double? health,
+    double? cleanliness,
   }) {
     return PetStats(
       hunger: (hunger ?? this.hunger).clamp(0, 100),
@@ -40,11 +43,13 @@ class PetStats {
       play: (play ?? this.play).clamp(0, 100),
       sleep: (sleep ?? this.sleep).clamp(0, 100),
       health: (health ?? this.health).clamp(0, 100),
+      cleanliness: (cleanliness ?? this.cleanliness).clamp(0, 100),
     );
   }
 
   // Devuelve true si algún stat está en nivel crítico
-  bool get isCritical => hunger < 25 || sleep < 15 || health < 20;
+  bool get isCritical =>
+      hunger < 25 || sleep < 15 || health < 20 || cleanliness < 20;
 
   // Promedio de todos los stats (útil para evaluar mutaciones)
   double get average => (hunger + mood + play + sleep + health) / 5;

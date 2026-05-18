@@ -30,13 +30,14 @@ class PetModelAdapter extends TypeAdapter<PetModel> {
       ..health = fields[10] as double
       ..lastInteraction = fields[11] as DateTime
       ..createdAt = fields[12] as DateTime
-      ..daysAlive = fields[13] as int;
+      ..daysAlive = fields[13] as int
+      ..cleanliness = (fields[14] as double?) ?? 100.0;
   }
 
   @override
   void write(BinaryWriter writer, PetModel obj) {
     writer
-      ..writeByte(14)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -64,7 +65,9 @@ class PetModelAdapter extends TypeAdapter<PetModel> {
       ..writeByte(12)
       ..write(obj.createdAt)
       ..writeByte(13)
-      ..write(obj.daysAlive);
+      ..write(obj.daysAlive)
+      ..writeByte(14)
+      ..write(obj.cleanliness);
   }
 
   @override

@@ -16,6 +16,7 @@ class AppColors {
   static const Color statPlay = Color(0xFF6BCB77);
   static const Color statSleep = Color(0xFF4D96FF);
   static const Color statHealth = Color(0xFFFF6B8A);
+  static const Color statCleanliness = Color(0xFF7AE0FF);
 
   // Barras de stat por nivel
   static const Color statHigh = Color(0xFF6BCB77); // > 60%
