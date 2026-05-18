@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 
 /// Identifica un minijuego registrado en el menú.
-enum GameId { jumpRope, foodDrop }
+enum GameId { jumpRope, foodDrop, colorTap }
 
 /// Bottom sheet con la lista de minijuegos disponibles.
 /// Devuelve el [GameId] seleccionado o null si el usuario cierra.
@@ -36,6 +36,14 @@ class _GamesMenuSheet extends StatelessWidget {
       label: 'Food Drop',
       description: 'Atrapa la comida, esquiva las bombas',
       color: AppColors.statHunger,
+      enabled: true,
+    ),
+    _GameInfo(
+      id: GameId.colorTap,
+      icon: '🎨',
+      label: 'Color Tap',
+      description: 'Toca el color correcto antes del tiempo',
+      color: AppColors.statMood,
       enabled: true,
     ),
   ];

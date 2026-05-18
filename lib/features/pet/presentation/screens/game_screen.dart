@@ -12,6 +12,7 @@ import '../widgets/food_menu_sheet.dart';
 import '../widgets/games_menu_sheet.dart';
 import '../widgets/stats_bar_widget.dart';
 import '../../../../game/pet_flame_game.dart';
+import 'color_tap_screen.dart';
 import 'food_drop_screen.dart';
 import 'jump_rope_screen.dart';
 import 'mutation_screen.dart';
@@ -326,6 +327,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       case GameId.foodDrop:
         await Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const FoodDropScreen()),
+        );
+        break;
+      case GameId.colorTap:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ColorTapScreen()),
         );
         break;
     }
