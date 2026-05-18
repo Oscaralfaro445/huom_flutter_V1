@@ -32,6 +32,8 @@ jobs:
         run: flutter pub get
 
       # TODO: habilitar cuando todo el repo esté formateado.
+      # Hoy hay 11 archivos sin formatear que romperían el job en su
+      # primera ejecución. Activar tras un commit dedicado de `dart format .`.
       # - name: Verify formatting
       #   run: dart format --output=none --set-exit-if-changed lib/ test/
 
