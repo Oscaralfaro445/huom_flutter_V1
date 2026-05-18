@@ -257,43 +257,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
             const SizedBox(height: 8),
 
-            // ── Botón Minijuegos ─────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _openGamesMenu,
-                  icon: const Text('🎮', style: TextStyle(fontSize: 16)),
-                  label: const Text(
-                    'Minijuegos',
-                    style: TextStyle(
-                      fontFamily: 'PressStart2P',
-                      fontSize: 10,
-                      color: AppColors.statPlay,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    side:
-                        const BorderSide(color: AppColors.statPlay, width: 2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
             // ── Botones de acción ────────────────────────────────────────────
+            // "Jugar" abre el menú de minijuegos; ya no hay botón separado.
+            // El stat play sube cuando el jugador termina un minijuego.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ActionButtonsWidget(
                 onFeed: _openFoodMenu,
-                onPlay: () =>
-                    ref.read(petActionsProvider.notifier).playWithPet(),
+                onPlay: _openGamesMenu,
                 onBathe: () =>
                     ref.read(petActionsProvider.notifier).bathePet(),
                 onSleep: () =>
