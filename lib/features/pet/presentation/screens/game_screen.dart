@@ -15,6 +15,7 @@ import '../../../../game/pet_flame_game.dart';
 import 'color_tap_screen.dart';
 import 'food_drop_screen.dart';
 import 'jump_rope_screen.dart';
+import 'memory_screen.dart';
 import 'mutation_screen.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
@@ -332,6 +333,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       case GameId.colorTap:
         await Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const ColorTapScreen()),
+        );
+        break;
+      case GameId.memory:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const MemoryScreen()),
         );
         break;
     }

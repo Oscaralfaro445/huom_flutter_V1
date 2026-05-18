@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 
 /// Identifica un minijuego registrado en el menú.
-enum GameId { jumpRope, foodDrop, colorTap }
+enum GameId { jumpRope, foodDrop, colorTap, memory }
 
 /// Bottom sheet con la lista de minijuegos disponibles.
 /// Devuelve el [GameId] seleccionado o null si el usuario cierra.
@@ -44,6 +44,14 @@ class _GamesMenuSheet extends StatelessWidget {
       label: 'Color Tap',
       description: 'Toca el color correcto antes del tiempo',
       color: AppColors.statMood,
+      enabled: true,
+    ),
+    _GameInfo(
+      id: GameId.memory,
+      icon: '🧠',
+      label: 'Memory',
+      description: 'Encuentra los pares de mascotas',
+      color: AppColors.statHealth,
       enabled: true,
     ),
   ];
