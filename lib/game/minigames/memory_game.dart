@@ -21,15 +21,20 @@ class MemoryCard {
 /// y los tests puedan validar la lógica sin Flame.
 ///
 /// Reglas:
-///   - 8 pares (16 cartas) usando sprites de las 7 mutaciones (una repetida).
+///   - [pairCount] pares (cartas = pairCount * 2). Cada par usa una
+///     mutación distinta, sin repetidos. Por defecto 6 pares (12 cartas,
+///     grid 4x3), que es el máximo posible sin repeticiones dado que
+///     solo hay 7 mutaciones disponibles (deja 1 fuera como variedad
+///     entre partidas).
 ///   - El jugador voltea cartas de a 2. Si coinciden, se quedan reveladas;
 ///     si no, se ocultan tras [flipBackDelay].
 ///   - El juego termina cuando todos los pares están encontrados.
-///   - Score = (40 - moves) * 5, mínimo 0. Premia eficiencia.
+///   - Score = max(0, (pairCount*4 - moves) * 5). Premia eficiencia.
 class MemoryGame extends ChangeNotifier {
   final void Function(int score) onGameOver;
   final Random _rng;
   final Duration flipBackDelay;
+  final int pairCount;
 
   MemoryGameState state = MemoryGameState.playing;
   int moves = 0;
@@ -42,19 +47,24 @@ class MemoryGame extends ChangeNotifier {
   MemoryGame({
     required this.onGameOver,
     int? seed,
+    this.pairCount = 6,
     this.flipBackDelay = const Duration(milliseconds: 700),
-  }) : _rng = Random(seed) {
+  })  : _rng = Random(seed),
+        assert(
+          pairCount > 0 && pairCount <= PetMutation.values.length,
+          'pairCount debe estar entre 1 y ${PetMutation.values.length} (mutaciones disponibles)',
+        ) {
     _setupBoard();
   }
 
   void _setupBoard() {
-    // 8 pares: 7 mutaciones + 1 repetida elegida al azar
-    final mutations = <PetMutation>[...PetMutation.values];
-    mutations.add(mutations[_rng.nextInt(mutations.length)]);
+    // Elegir pairCount mutaciones DISTINTAS de las disponibles
+    final available = <PetMutation>[...PetMutation.values]..shuffle(_rng);
+    final selected = available.take(pairCount).toList();
 
     final pool = <MemoryCard>[];
     var id = 0;
-    for (final m in mutations) {
+    for (final m in selected) {
       pool.add(MemoryCard(id: id++, mutation: m));
       pool.add(MemoryCard(id: id++, mutation: m));
     }
@@ -103,8 +113,10 @@ class MemoryGame extends ChangeNotifier {
     final allMatched = cards.every((c) => c.matched);
     if (!allMatched) return;
     state = MemoryGameState.gameOver;
-    // Score = max(0, (40 - moves) * 5)
-    score = ((40 - moves) * 5).clamp(0, 200);
+    // Score = max(0, (perfectMoves*2 - moves) * 5). El score perfecto
+    // es 0 moves "extra", lo que da (pairCount*2)*5. pairCount=6 → max 60.
+    final perfectBudget = pairCount * 4;
+    score = ((perfectBudget - moves) * 5).clamp(0, perfectBudget * 5);
     onGameOver(score);
   }
 
