@@ -13,6 +13,7 @@ import '../../domain/usecases/feed_pet_usecase.dart';
 Future<FoodItem?> showFoodMenu(BuildContext context) {
   return showModalBottomSheet<FoodItem>(
     context: context,
+    isScrollControlled: true, // <--- Agrega esta línea
     backgroundColor: AppColors.cardBackground,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -85,13 +86,25 @@ class _FoodMenuSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            for (final info in _items) ...[
-              _FoodTile(
-                info: info,
-                onTap: () => Navigator.of(context).pop(info.item),
+
+            // --- INICIO DEL CAMBIO ---
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final info in _items) ...[
+                      _FoodTile(
+                        info: info,
+                        onTap: () => Navigator.of(context).pop(info.item),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-            ],
+            ),
+            // --- FIN DEL CAMBIO ---
           ],
         ),
       ),
