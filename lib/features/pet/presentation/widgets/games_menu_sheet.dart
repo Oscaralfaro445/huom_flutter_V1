@@ -3,7 +3,15 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 
 /// Identifica un minijuego registrado en el menú.
-enum GameId { jumpRope, foodDrop, colorTap, memory, skyJump }
+enum GameId {
+  foodDrop,
+  colorTap,
+  memory,
+  skyJump,
+  reactionTap,
+  whackAPet,
+  dodgeBombs,
+}
 
 /// Bottom sheet con la lista de minijuegos disponibles.
 /// Devuelve el [GameId] seleccionado o null si el usuario cierra.
@@ -39,14 +47,6 @@ class _GamesMenuSheet extends StatelessWidget {
 
   static const _games = <_GameInfo>[
     _GameInfo(
-      id: GameId.jumpRope,
-      icon: '🪢',
-      label: 'Jump Rope',
-      description: 'Salta la cuerda',
-      color: AppColors.statPlay,
-      enabled: true,
-    ),
-    _GameInfo(
       id: GameId.foodDrop,
       icon: '🍔',
       label: 'Food Drop',
@@ -76,6 +76,30 @@ class _GamesMenuSheet extends StatelessWidget {
       label: 'Sky Jump',
       description: 'Sube alto',
       color: AppColors.statSleep,
+      enabled: true,
+    ),
+    _GameInfo(
+      id: GameId.reactionTap,
+      icon: '⚡',
+      label: 'Reaction',
+      description: 'Toca rápido',
+      color: AppColors.primary,
+      enabled: true,
+    ),
+    _GameInfo(
+      id: GameId.whackAPet,
+      icon: '🔨',
+      label: 'Whack-A-Pet',
+      description: 'Atrapa mascotas',
+      color: AppColors.statPlay,
+      enabled: true,
+    ),
+    _GameInfo(
+      id: GameId.dodgeBombs,
+      icon: '💣',
+      label: 'Dodge Bombs',
+      description: 'Esquiva bombas',
+      color: AppColors.statCritical,
       enabled: true,
     ),
   ];

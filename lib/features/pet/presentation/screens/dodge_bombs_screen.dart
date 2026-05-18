@@ -5,19 +5,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/services/coins_service.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../game/minigames/food_drop_game.dart';
+import '../../../../game/minigames/dodge_bombs_game.dart';
 import '../../domain/entities/pet.dart';
 import '../providers/pet_provider.dart';
 
-class FoodDropScreen extends ConsumerStatefulWidget {
-  const FoodDropScreen({super.key});
+class DodgeBombsScreen extends ConsumerStatefulWidget {
+  const DodgeBombsScreen({super.key});
 
   @override
-  ConsumerState<FoodDropScreen> createState() => _FoodDropScreenState();
+  ConsumerState<DodgeBombsScreen> createState() => _DodgeBombsScreenState();
 }
 
-class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
-  late FoodDropGame _game;
+class _DodgeBombsScreenState extends ConsumerState<DodgeBombsScreen> {
+  late DodgeBombsGame _game;
   bool _gameOver = false;
   int _finalScore = 0;
   int _coinsEarned = 0;
@@ -36,7 +36,7 @@ class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
     final pet = ref.read(petActionsProvider).valueOrNull;
     final spritePath =
         (pet?.mutation ?? PetMutation.slimeBit).spritePath;
-    _game = FoodDropGame(
+    _game = DodgeBombsGame(
       petSpritePath: spritePath,
       onGameOver: (score) {
         final coins = _calculateCoins(score);
@@ -84,7 +84,7 @@ class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
                   ),
                   const SizedBox(width: 12),
                   const Text(
-                    'Food Drop',
+                    'Dodge Bombs',
                     style: TextStyle(
                       fontFamily: 'PressStart2P',
                       fontSize: 12,
@@ -95,12 +95,13 @@ class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
               ),
             ),
           ),
-          if (_gameOver) _GameOverOverlay(
-            score: _finalScore,
-            coins: _coinsEarned,
-            onReplay: _startGame,
-            onExit: () => Navigator.of(context).pop(),
-          ),
+          if (_gameOver)
+            _GameOverOverlay(
+              score: _finalScore,
+              coins: _coinsEarned,
+              onReplay: _startGame,
+              onExit: () => Navigator.of(context).pop(),
+            ),
         ],
       ),
     );

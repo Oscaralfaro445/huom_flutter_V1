@@ -13,11 +13,13 @@ import '../widgets/games_menu_sheet.dart';
 import '../widgets/stats_bar_widget.dart';
 import '../../../../game/pet_flame_game.dart';
 import 'color_tap_screen.dart';
+import 'dodge_bombs_screen.dart';
 import 'food_drop_screen.dart';
-import 'jump_rope_screen.dart';
 import 'memory_screen.dart';
 import 'mutation_screen.dart';
+import 'reaction_tap_screen.dart';
 import 'sky_jump_screen.dart';
+import 'whack_a_pet_screen.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -292,11 +294,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     if (game == null) return;
     if (!mounted) return;
     switch (game) {
-      case GameId.jumpRope:
-        await Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const JumpRopeScreen()),
-        );
-        break;
       case GameId.foodDrop:
         await Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const FoodDropScreen()),
@@ -315,6 +312,21 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       case GameId.skyJump:
         await Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const SkyJumpScreen()),
+        );
+        break;
+      case GameId.reactionTap:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ReactionTapScreen()),
+        );
+        break;
+      case GameId.whackAPet:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const WhackAPetScreen()),
+        );
+        break;
+      case GameId.dodgeBombs:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const DodgeBombsScreen()),
         );
         break;
     }
