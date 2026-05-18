@@ -12,8 +12,12 @@ import '../widgets/food_menu_sheet.dart';
 import '../widgets/games_menu_sheet.dart';
 import '../widgets/stats_bar_widget.dart';
 import '../../../../game/pet_flame_game.dart';
+import 'color_tap_screen.dart';
+import 'food_drop_screen.dart';
 import 'jump_rope_screen.dart';
+import 'memory_screen.dart';
 import 'mutation_screen.dart';
+import 'sky_jump_screen.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -321,10 +325,30 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         await Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const JumpRopeScreen()),
         );
-        if (!mounted) return;
-        ref.read(coinsProvider.notifier).refresh();
+        break;
+      case GameId.foodDrop:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const FoodDropScreen()),
+        );
+        break;
+      case GameId.colorTap:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ColorTapScreen()),
+        );
+        break;
+      case GameId.memory:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const MemoryScreen()),
+        );
+        break;
+      case GameId.skyJump:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const SkyJumpScreen()),
+        );
         break;
     }
+    if (!mounted) return;
+    ref.read(coinsProvider.notifier).refresh();
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
