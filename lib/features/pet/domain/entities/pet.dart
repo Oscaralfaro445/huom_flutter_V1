@@ -12,6 +12,40 @@ enum PetMutation {
   glitchPet,
 }
 
+enum ConditionType {
+  cold,          // Resfriado
+  flu,           // Gripe
+  fever,         // Fiebre
+  minorInjury,   // Lesión leve
+  seriousInjury, // Lesión grave
+  exhaustion,    // Agotamiento
+}
+
+class PetCondition {
+  final ConditionType type;
+  final DateTime contractedAt;
+
+  const PetCondition({required this.type, required this.contractedAt});
+
+  String get displayName => switch (type) {
+        ConditionType.cold => 'Resfriado',
+        ConditionType.flu => 'Gripe',
+        ConditionType.fever => 'Fiebre',
+        ConditionType.minorInjury => 'Lesión leve',
+        ConditionType.seriousInjury => 'Lesión grave',
+        ConditionType.exhaustion => 'Agotamiento',
+      };
+
+  String get icon => switch (type) {
+        ConditionType.cold => '🤧',
+        ConditionType.flu => '🤒',
+        ConditionType.fever => '🥵',
+        ConditionType.minorInjury => '🩹',
+        ConditionType.seriousInjury => '🤕',
+        ConditionType.exhaustion => '😵',
+      };
+}
+
 class PetStats {
   final double hunger;
   final double mood;
@@ -47,11 +81,9 @@ class PetStats {
     );
   }
 
-  // Devuelve true si algún stat está en nivel crítico
   bool get isCritical =>
       hunger < 25 || sleep < 15 || health < 20 || cleanliness < 20;
 
-  // Promedio de todos los stats (útil para evaluar mutaciones)
   double get average => (hunger + mood + play + sleep + health) / 5;
 }
 
@@ -66,6 +98,7 @@ class Pet {
   final DateTime createdAt;
   final int daysAlive;
   final String biomeId;
+  final List<PetCondition> conditions;
 
   const Pet({
     required this.id,
@@ -78,6 +111,7 @@ class Pet {
     required this.createdAt,
     this.daysAlive = 0,
     this.biomeId = 'home',
+    this.conditions = const [],
   });
 
   Pet copyWith({
@@ -89,6 +123,7 @@ class Pet {
     DateTime? lastInteraction,
     int? daysAlive,
     String? biomeId,
+    List<PetCondition>? conditions,
   }) {
     return Pet(
       id: id,
@@ -101,12 +136,30 @@ class Pet {
       lastInteraction: lastInteraction ?? this.lastInteraction,
       daysAlive: daysAlive ?? this.daysAlive,
       biomeId: biomeId ?? this.biomeId,
+      conditions: conditions ?? this.conditions,
     );
   }
+
+  bool get hasCondition => conditions.isNotEmpty;
+
+  bool get isInjured => conditions.any(
+        (c) =>
+            c.type == ConditionType.minorInjury ||
+            c.type == ConditionType.seriousInjury,
+      );
+
+  bool get isIll => conditions.any(
+        (c) =>
+            c.type == ConditionType.cold ||
+            c.type == ConditionType.flu ||
+            c.type == ConditionType.fever,
+      );
+
+  bool get isExhausted =>
+      conditions.any((c) => c.type == ConditionType.exhaustion);
 }
 
 extension PetMutationAssets on PetMutation {
-  /// Ruta al sprite sheet 192×192 (grid 4×4, 48px/celda) en assets/sprites/.
   String get spritePath => switch (this) {
         PetMutation.slimeBit => 'sprites/slimebit.png',
         PetMutation.cactusRex => 'sprites/cactusrex.png',

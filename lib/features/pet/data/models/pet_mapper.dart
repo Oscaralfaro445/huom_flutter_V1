@@ -3,6 +3,19 @@ import 'pet_model.dart';
 
 extension PetMapper on PetModel {
   Pet toEntity() {
+    final conditions = <PetCondition>[];
+    for (int i = 0; i < conditionTypeIndexes.length; i++) {
+      final typeIdx = conditionTypeIndexes[i];
+      if (typeIdx < 0 || typeIdx >= ConditionType.values.length) continue;
+      final timestamp = i < conditionTimestamps.length
+          ? conditionTimestamps[i]
+          : DateTime.now().millisecondsSinceEpoch;
+      conditions.add(PetCondition(
+        type: ConditionType.values[typeIdx],
+        contractedAt: DateTime.fromMillisecondsSinceEpoch(timestamp),
+      ));
+    }
+
     return Pet(
       id: id,
       name: name,
@@ -21,6 +34,7 @@ extension PetMapper on PetModel {
       lastInteraction: lastInteraction,
       createdAt: createdAt,
       daysAlive: daysAlive,
+      conditions: conditions,
     );
   }
 }
@@ -42,6 +56,12 @@ extension PetEntityMapper on Pet {
       ..cleanliness = stats.cleanliness
       ..lastInteraction = lastInteraction
       ..createdAt = createdAt
-      ..daysAlive = daysAlive;
+      ..daysAlive = daysAlive
+      ..conditionTypeIndexes =
+          conditions.map((c) => c.type.index).toList()
+      ..conditionTimestamps =
+          conditions
+              .map((c) => c.contractedAt.millisecondsSinceEpoch)
+              .toList();
   }
 }

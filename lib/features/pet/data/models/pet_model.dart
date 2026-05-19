@@ -48,4 +48,12 @@ class PetModel extends HiveObject {
 
   @HiveField(14)
   double cleanliness = 100;
+
+  // Condition type indexes (parallel list with conditionTimestamps)
+  @HiveField(15)
+  List<int> conditionTypeIndexes = [];
+
+  // Milliseconds since epoch for each condition's contractedAt
+  @HiveField(16)
+  List<int> conditionTimestamps = [];
 }
