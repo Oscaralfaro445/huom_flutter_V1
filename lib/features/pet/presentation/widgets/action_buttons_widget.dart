@@ -6,6 +6,7 @@ class ActionButtonsWidget extends StatelessWidget {
   final VoidCallback onPlay;
   final VoidCallback onBathe;
   final VoidCallback onSleep;
+  final VoidCallback onStore;
 
   const ActionButtonsWidget({
     super.key,
@@ -13,6 +14,7 @@ class ActionButtonsWidget extends StatelessWidget {
     required this.onPlay,
     required this.onBathe,
     required this.onSleep,
+    required this.onStore,
   });
 
   @override
@@ -50,6 +52,12 @@ class ActionButtonsWidget extends StatelessWidget {
             color: AppColors.statMood,
             onTap: onSleep,
           ),
+          _ActionButton(
+            icon: '🏪',
+            label: 'Tienda',
+            color: AppColors.statHealth,
+            onTap: onStore,
+          ),
         ],
       ),
     );
@@ -75,7 +83,7 @@ class _ActionButton extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
           color: AppColors.buttonBackground,
           borderRadius: BorderRadius.circular(10),
@@ -84,12 +92,12 @@ class _ActionButton extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(icon, style: const TextStyle(fontSize: 22)),
+            Text(icon, style: const TextStyle(fontSize: 20)),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                fontSize: 7,
+                fontSize: 6,
                 color: color,
                 fontFamily: 'PressStart2P',
               ),

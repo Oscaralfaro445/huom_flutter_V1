@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +23,7 @@ class _DodgeBombsScreenState extends ConsumerState<DodgeBombsScreen> {
   bool _gameOver = false;
   int _finalScore = 0;
   int _coinsEarned = 0;
+  ConditionType? _injury;
 
   @override
   void initState() {
@@ -32,20 +35,22 @@ class _DodgeBombsScreenState extends ConsumerState<DodgeBombsScreen> {
     setState(() {
       _gameOver = false;
       _finalScore = 0;
+      _injury = null;
     });
     final pet = ref.read(petActionsProvider).valueOrNull;
-    final spritePath =
-        (pet?.mutation ?? PetMutation.slimeBit).spritePath;
+    final spritePath = (pet?.mutation ?? PetMutation.slimeBit).spritePath;
     _game = DodgeBombsGame(
       petSpritePath: spritePath,
       onGameOver: (score) {
         final coins = _calculateCoins(score);
+        final injury = _rollInjury(score);
         setState(() {
           _gameOver = true;
           _finalScore = score;
           _coinsEarned = coins;
+          _injury = injury;
         });
-        _applyRewards(coins);
+        _applyRewards(coins, injury);
       },
     );
   }
@@ -57,9 +62,25 @@ class _DodgeBombsScreenState extends ConsumerState<DodgeBombsScreen> {
     return 5;
   }
 
-  Future<void> _applyRewards(int coins) async {
+  /// Score bajo → mayor chance de lesión. Score 0 = 40%, score 5+ = 0%.
+  ConditionType? _rollInjury(int score) {
+    if (score >= 5) return null;
+    final roll = Random().nextDouble();
+    if (score == 0 && roll < 0.40) {
+      return roll < 0.15
+          ? ConditionType.seriousInjury
+          : ConditionType.minorInjury;
+    }
+    if (score <= 2 && roll < 0.20) return ConditionType.minorInjury;
+    return null;
+  }
+
+  Future<void> _applyRewards(int coins, ConditionType? injury) async {
     await sl<CoinsService>().addCoins(coins);
     await ref.read(petActionsProvider.notifier).playWithPet();
+    if (injury != null) {
+      await ref.read(petActionsProvider.notifier).applyInjury(injury);
+    }
   }
 
   @override
@@ -99,6 +120,7 @@ class _DodgeBombsScreenState extends ConsumerState<DodgeBombsScreen> {
             _GameOverOverlay(
               score: _finalScore,
               coins: _coinsEarned,
+              injury: _injury,
               onReplay: _startGame,
               onExit: () => Navigator.of(context).pop(),
             ),
@@ -111,12 +133,14 @@ class _DodgeBombsScreenState extends ConsumerState<DodgeBombsScreen> {
 class _GameOverOverlay extends StatelessWidget {
   final int score;
   final int coins;
+  final ConditionType? injury;
   final VoidCallback onReplay;
   final VoidCallback onExit;
 
   const _GameOverOverlay({
     required this.score,
     required this.coins,
+    required this.injury,
     required this.onReplay,
     required this.onExit,
   });
@@ -178,6 +202,25 @@ class _GameOverOverlay extends StatelessWidget {
                   color: AppColors.statPlay,
                 ),
               ),
+              if (injury != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  '${_injuryEmoji(injury!)} Tu mascota se lesionó',
+                  style: const TextStyle(
+                    fontFamily: 'PressStart2P',
+                    fontSize: 8,
+                    color: AppColors.statCritical,
+                  ),
+                ),
+                Text(
+                  _injuryName(injury!),
+                  style: const TextStyle(
+                    fontFamily: 'PressStart2P',
+                    fontSize: 7,
+                    color: AppColors.statCritical,
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -230,4 +273,10 @@ class _GameOverOverlay extends StatelessWidget {
       ),
     );
   }
+
+  String _injuryEmoji(ConditionType t) =>
+      t == ConditionType.seriousInjury ? '🤕' : '🩹';
+
+  String _injuryName(ConditionType t) =>
+      t == ConditionType.seriousInjury ? 'Lesión grave' : 'Lesión leve';
 }

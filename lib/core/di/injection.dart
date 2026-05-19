@@ -13,26 +13,28 @@ import '../../features/pet/domain/usecases/play_usecase.dart';
 import '../../features/pet/domain/usecases/bathe_usecase.dart';
 import '../../features/pet/domain/usecases/create_pet_usecase.dart';
 import '../../features/pet/domain/usecases/die_usecase.dart';
+import '../../features/pet/domain/usecases/treat_pet_usecase.dart';
 import '../services/stat_decay_service.dart';
 import '../services/coins_service.dart';
+import '../services/illness_service.dart';
 import '../services/mutation_history_tracker.dart';
 import '../services/mutation_check_service.dart';
 
 final GetIt sl = GetIt.instance;
 
 Future<void> setupDependencies() async {
-  // Inicializar Hive
   await Hive.initFlutter();
 
-  // Registrar adaptadores
   Hive.registerAdapter(PetModelAdapter());
   Hive.registerAdapter(PetMemorialModelAdapter());
 
   // Services
-  sl.registerSingleton<StatDecayService>(StatDecayService());
+  sl.registerSingleton<IllnessService>(IllnessService());
+  sl.registerSingleton<StatDecayService>(StatDecayService(sl<IllnessService>()));
   sl.registerSingleton<CoinsService>(CoinsService());
   sl.registerSingleton<MutationHistoryTracker>(MutationHistoryTracker());
   sl.registerSingleton<MutationCheckService>(MutationCheckService());
+
   // Repositories
   sl.registerSingleton<PetRepository>(PetRepositoryImpl());
   sl.registerSingleton<MemorialRepository>(MemorialRepositoryImpl());
@@ -58,5 +60,10 @@ Future<void> setupDependencies() async {
   sl.registerFactory(() => DieUseCase(
         sl<PetRepository>(),
         sl<MemorialRepository>(),
+      ));
+  sl.registerFactory(() => TreatPetUseCase(
+        sl<PetRepository>(),
+        sl<CoinsService>(),
+        sl<StatDecayService>(),
       ));
 }

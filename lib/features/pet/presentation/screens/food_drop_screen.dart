@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +23,7 @@ class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
   bool _gameOver = false;
   int _finalScore = 0;
   int _coinsEarned = 0;
+  bool _injured = false;
 
   @override
   void initState() {
@@ -32,20 +35,22 @@ class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
     setState(() {
       _gameOver = false;
       _finalScore = 0;
+      _injured = false;
     });
     final pet = ref.read(petActionsProvider).valueOrNull;
-    final spritePath =
-        (pet?.mutation ?? PetMutation.slimeBit).spritePath;
+    final spritePath = (pet?.mutation ?? PetMutation.slimeBit).spritePath;
     _game = FoodDropGame(
       petSpritePath: spritePath,
       onGameOver: (score) {
         final coins = _calculateCoins(score);
+        final injured = _rollInjury(score);
         setState(() {
           _gameOver = true;
           _finalScore = score;
           _coinsEarned = coins;
+          _injured = injured;
         });
-        _applyRewards(coins);
+        _applyRewards(coins, injured);
       },
     );
   }
@@ -57,9 +62,20 @@ class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
     return 5;
   }
 
-  Future<void> _applyRewards(int coins) async {
+  /// Colisionar con bomba (score 0) = 20% chance de lesión leve.
+  bool _rollInjury(int score) {
+    if (score > 0) return false;
+    return Random().nextDouble() < 0.20;
+  }
+
+  Future<void> _applyRewards(int coins, bool injured) async {
     await sl<CoinsService>().addCoins(coins);
     await ref.read(petActionsProvider.notifier).playWithPet();
+    if (injured) {
+      await ref
+          .read(petActionsProvider.notifier)
+          .applyInjury(ConditionType.minorInjury);
+    }
   }
 
   @override
@@ -95,12 +111,14 @@ class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
               ),
             ),
           ),
-          if (_gameOver) _GameOverOverlay(
-            score: _finalScore,
-            coins: _coinsEarned,
-            onReplay: _startGame,
-            onExit: () => Navigator.of(context).pop(),
-          ),
+          if (_gameOver)
+            _GameOverOverlay(
+              score: _finalScore,
+              coins: _coinsEarned,
+              injured: _injured,
+              onReplay: _startGame,
+              onExit: () => Navigator.of(context).pop(),
+            ),
         ],
       ),
     );
@@ -110,12 +128,14 @@ class _FoodDropScreenState extends ConsumerState<FoodDropScreen> {
 class _GameOverOverlay extends StatelessWidget {
   final int score;
   final int coins;
+  final bool injured;
   final VoidCallback onReplay;
   final VoidCallback onExit;
 
   const _GameOverOverlay({
     required this.score,
     required this.coins,
+    required this.injured,
     required this.onReplay,
     required this.onExit,
   });
@@ -177,6 +197,17 @@ class _GameOverOverlay extends StatelessWidget {
                   color: AppColors.statPlay,
                 ),
               ),
+              if (injured) ...[
+                const SizedBox(height: 10),
+                const Text(
+                  '🩹 ¡La bomba lastimó a tu mascota!',
+                  style: TextStyle(
+                    fontFamily: 'PressStart2P',
+                    fontSize: 8,
+                    color: AppColors.statCritical,
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               Row(
                 children: [

@@ -1,11 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:huom/core/services/illness_service.dart';
 import 'package:huom/core/services/stat_decay_service.dart';
 import 'package:huom/features/pet/domain/entities/pet.dart';
 
 void main() {
   late StatDecayService service;
 
-  setUp(() => service = StatDecayService());
+  setUp(() => service = StatDecayService(IllnessService()));
 
   // ---------------------------------------------------------------------------
   // Helper

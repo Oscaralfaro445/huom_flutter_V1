@@ -288,3 +288,232 @@ El archivo `test/core/services/stat_decay_service_test.dart` cubre **34 casos** 
 4. **[MEDIO]** Corregir hitbox puntual en `FoodDropGame`.
 5. **[MEDIO]** Eliminar `DragCallbacks` no utilizado en `SkyJumpGame`.
 6. **[REFACTOR]** Extraer `_loadPetImage()` a un mixin compartido para eliminar duplicación.
+
+---
+---
+
+# QA Report — Sistema de Salud · Tienda · Lesiones en Minijuegos
+**Fecha:** 2026-05-18  
+**Rama:** `feature/rama_hughost`  
+**Autor del cambio:** Hugh0st  
+**Revisado por:** Claude Code (análisis estático + revisión de código)  
+**Scope:** Sistema de condiciones · IllnessService · Tienda de medicamentos · Lesiones en minijuegos · Sueño como factor de riesgo
+
+---
+
+## 1. Descripción general del cambio
+
+Esta entrega introduce el **sistema de salud completo** para la mascota virtual. Anteriormente la mascota nunca se enfermaba, lesionaba ni padecía consecuencias por privación de sueño. Desde esta versión el juego contempla:
+
+- **Condiciones de salud activas** (enfermedades y lesiones) que degradan stats con el tiempo.
+- **Progresión de enfermedades** respiratorias: Resfriado → Gripe → Fiebre si no se tratan.
+- **Agotamiento** causado por privación prolongada de sueño.
+- **Lesiones en minijuegos** proporcionales al desempeño del jugador.
+- **Tienda de medicamentos** con coste en monedas, dando por fin propósito a esa mecánica.
+
+---
+
+## 2. Archivos creados
+
+| Archivo | Propósito |
+|---------|-----------|
+| `lib/core/services/illness_service.dart` | Lógica central de enfermedades: probabilidad de contagio, factores de riesgo, decay por condición, aplicación de lesiones |
+| `lib/features/pet/domain/usecases/treat_pet_usecase.dart` | Use case de tratamiento + enum `TreatmentItem` con todos los ítems de tienda |
+| `lib/features/store/presentation/screens/store_screen.dart` | Pantalla de tienda de medicamentos |
+
+---
+
+## 3. Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `pet.dart` | Nuevo enum `ConditionType`, nueva clase `PetCondition`, campo `conditions` en `Pet`, helpers `isInjured / isIll / isExhausted` |
+| `pet_model.dart` | Campos Hive 15 (`conditionTypeIndexes`) y 16 (`conditionTimestamps`) |
+| `pet_model.g.dart` | Adaptador Hive actualizado manualmente (17 campos totales, backward-compatible) |
+| `pet_mapper.dart` | Serialización/deserialización de condiciones como listas paralelas de int |
+| `stat_decay_service.dart` | Recibe `IllnessService` por constructor; aplica decay por condición y chequeo de nuevas enfermedades en cada ciclo |
+| `pet_provider.dart` | Nuevos métodos `treatPet()` y `applyInjury()` |
+| `injection.dart` | Registro de `IllnessService` y `TreatPetUseCase` |
+| `stats_bar_widget.dart` | Añadido indicador de Salud ❤️ (6to stat) y banda de condiciones activas bajo las barras |
+| `action_buttons_widget.dart` | Añadido 5to botón "Tienda 🏪" |
+| `game_screen.dart` | Header con acceso a tienda, banner actualizado con condiciones activas |
+| `dodge_bombs_screen.dart` | Sistema de lesiones post-game según score |
+| `sky_jump_screen.dart` | Sistema de lesiones post-game según score |
+| `food_drop_screen.dart` | Sistema de lesiones post-game según score |
+| `whack_a_pet_screen.dart` | Sistema de lesiones post-game según score |
+| `stat_decay_service_test.dart` | Actualizado `setUp` para pasar `IllnessService()` al nuevo constructor |
+
+---
+
+## 4. Cómo funciona el sistema
+
+### 4.1 Condiciones (`ConditionType`)
+
+La mascota puede tener **múltiples condiciones simultáneas** almacenadas en `Pet.conditions`. Cada condición tiene tipo y fecha de contagio.
+
+| Condición | Ícono | Efectos por hora (sobre stats) |
+|-----------|-------|-------------------------------|
+| `cold` (Resfriado) | 🤧 | health −1.5, mood −0.5 |
+| `flu` (Gripe) | 🤒 | health −3.0, mood −2.0 |
+| `fever` (Fiebre) | 🥵 | health −5.0, mood −4.0, hunger −2.0 |
+| `minorInjury` (Lesión leve) | 🩹 | health −1.0, play −2.0 |
+| `seriousInjury` (Lesión grave) | 🤕 | health −2.0, play −4.0, mood −1.5 |
+| `exhaustion` (Agotamiento) | 😵 | Multiplica ×1.5 todos los penalizadores anteriores |
+
+Las enfermedades son **progresivas**: si el resfriado no se trata, puede progresar a gripe y luego a fiebre. Nunca se pueden tener dos grados simultáneos de la misma cadena (cold → flu → fever).
+
+### 4.2 Sueño como factor de riesgo
+
+El sueño bajo tiene dos efectos mecánicos:
+
+| Nivel de sueño | Efecto |
+|----------------|--------|
+| < 40 | Probabilidad de enfermar ×1.5 |
+| < 20 | Probabilidad de enfermar ×3.0 |
+| < 10 por más de 1 hora | Se activa `exhaustion` automáticamente |
+
+El agotamiento a su vez duplica la probabilidad de contraer otras enfermedades (`×2.0` adicional), creando un ciclo negativo si no se hace dormir a la mascota.
+
+### 4.3 Probabilidad de enfermedad
+
+En cada apertura de la app, `IllnessService.checkForNewConditions()` evalúa si la mascota contrae una nueva condición. La fórmula es:
+
+```
+chance = baseChance(0.01/hora) × horasTranscurridas × multiplicadorRiesgo
+```
+
+**Multiplicadores de riesgo acumulables:**
+
+| Factor | Multiplicador |
+|--------|--------------|
+| Mutación `aquaSlime` | ×0.5 (resistente) |
+| Mutación `shadowBone` | ×1.5 (frágil) |
+| Etapa `baby` | ×1.3 |
+| Estado `stressed` | ×1.5 |
+| Cleanliness < 25 | ×1.8 |
+| Health < 30 | ×2.0 |
+| Sleep < 40 | ×1.5 |
+| Sleep < 20 | ×3.0 |
+| Tiene `exhaustion` | ×2.0 |
+
+### 4.4 Lesiones en minijuegos
+
+Cuatro juegos pueden causar lesiones al terminar. La probabilidad se evalúa según el score final:
+
+| Juego | Score 0 | Score 1–2 | Score ≥ 3 |
+|-------|---------|-----------|-----------|
+| **Dodge Bombs** | 40% (15% grave / 25% leve) | 20% leve | Sin lesión |
+| **Sky Jump** | 25% leve | 12% leve | Sin lesión |
+| **Food Drop** | 20% leve | Sin lesión | Sin lesión |
+| **Whack-A-Pet** | 10% leve | Sin lesión | Sin lesión |
+
+`Color Tap`, `Memory` y `Reaction Tap` no generan lesiones físicas.
+
+### 4.5 Tienda de medicamentos
+
+Accesible desde el botón **🏪 Tienda** en la barra de acciones o desde el contador de monedas en el header. La tienda muestra las condiciones activas de la mascota y resalta los tratamientos útiles en el momento.
+
+| Ítem | Ícono | Coste | Efecto |
+|------|-------|-------|--------|
+| Antihistamínico | 💊 | 15 🪙 | Cura `cold` |
+| Antibiótico | 🧪 | 35 🪙 | Cura `flu` |
+| Antibiótico Fuerte | 💉 | 60 🪙 | Cura `fever` |
+| Venda | 🩹 | 20 🪙 | Cura `minorInjury` y `seriousInjury` |
+| Vitaminas | 🌿 | 25 🪙 | +20 de salud (sin curar condición específica) |
+| Descanso Forzado | 😴 | Gratis | Cura `exhaustion` + +40 sueño |
+
+Si el jugador no tiene monedas suficientes, el botón de compra aparece inactivo (gris).
+
+---
+
+## 5. Pruebas manuales — Sistema de salud y tienda
+
+### 5.1 Pre-condiciones
+- Mascota activa en cualquier etapa
+- Conocer el saldo de monedas antes de comprar
+- Para pruebas de enfermedad por sueño: dejar la mascota sin dormir hasta que `sleep < 10`
+
+### 5.2 Tabla de validación — Condiciones y visualización
+
+| ID | Escenario | Pasos | Resultado esperado |
+|----|-----------|-------|--------------------|
+| HS-01 | Indicador de salud visible | 1. Abrir GameScreen | Barra ❤️ aparece como 6to stat junto a hambre, mood, juego, sueño, limpieza | ☐ Pendiente |
+| HS-02 | Condición aparece bajo las barras | 1. Forzar una condición (ver HS-07) → 2. Observar el widget de stats | Banda de condiciones activas aparece bajo las barras con ícono y nombre | ☐ Pendiente |
+| HS-03 | Banner de advertencia menciona condición | 1. Mascota con condición activa | Banner rojo superior muestra ícono + nombre de condición + "visita la tienda" | ☐ Pendiente |
+| HS-04 | Múltiples condiciones visibles | 1. Mascota con lesión + resfriado | Ambas condiciones aparecen en la banda inferior del widget de stats | ☐ Pendiente |
+| HS-05 | Estado `sick` cuando hay condición | 1. Mascota con cualquier condición activa | `PetState` es `sick` y la mascota muestra animación triste | ☐ Pendiente |
+
+### 5.3 Tabla de validación — Agotamiento por privación de sueño
+
+| ID | Escenario | Pasos | Resultado esperado |
+|----|-----------|-------|--------------------|
+| SL-01 | Agotamiento se activa con sueño crítico | 1. Dejar `sleep` bajar a < 10 sin hacer dormir | Tras ~1 hora de tiempo real, aparece condición `😵 Agotamiento` | ☐ Pendiente |
+| SL-02 | Agotamiento amplifica decay | 1. Mascota agotada | Los stats decaen más rápido que sin agotamiento (multiplicador ×1.5) | ☐ Pendiente |
+| SL-03 | Descanso Forzado cura el agotamiento | 1. Mascota con agotamiento → 2. Ir a tienda → 3. Usar "Descanso Forzado" (gratis) | Condición de agotamiento desaparece, sueño +40 | ☐ Pendiente |
+| SL-04 | Sueño bajo aumenta riesgo de enfermedad | 1. Mantener `sleep` < 20 por varias sesiones | Mayor frecuencia de aparición de resfriado en comparación a mascota con sueño normal | ☐ Pendiente |
+
+### 5.4 Tabla de validación — Progresión de enfermedades
+
+| ID | Escenario | Pasos | Resultado esperado |
+|----|-----------|-------|--------------------|
+| IL-01 | Resfriado degrada salud | 1. Mascota con `cold` → 2. No tratar, cerrar app 2 horas → 3. Reabrir | Salud bajó ~3 puntos (1.5/hora × 2 horas) respecto al valor previo | ☐ Pendiente |
+| IL-02 | Resfriado puede progresar a gripe | 1. Mascota con `cold` sin tratar por varias sesiones | Eventualmente aparece `flu` reemplazando o junto al `cold` | ☐ Pendiente |
+| IL-03 | Gripe degrada salud más rápido | 1. Mascota con `flu` → 2. No tratar, cerrar 2 horas → 3. Reabrir | Salud bajó ~6 puntos (3.0/hora × 2 horas) | ☐ Pendiente |
+| IL-04 | Fiebre es la condición más dañina | 1. Mascota con `fever` → 2. No tratar, cerrar 1 hora → 3. Reabrir | Salud −5, mood −4, hunger −2 respecto a valores previos | ☐ Pendiente |
+| IL-05 | Mascota no puede tener cold y flu simultáneos | 1. Mascota con `flu` | En la banda de condiciones NO aparece `cold` al mismo tiempo que `flu` | ☐ Pendiente |
+
+### 5.5 Tabla de validación — Tienda
+
+| ID | Escenario | Pasos | Resultado esperado |
+|----|-----------|-------|--------------------|
+| ST-01 | Tienda accesible desde botón | 1. GameScreen → 2. Tocar botón 🏪 Tienda | Se abre `StoreScreen` con lista de medicamentos | ☐ Pendiente |
+| ST-02 | Tienda accesible desde monedas | 1. GameScreen → 2. Tocar el contador de monedas 🪙 en el header | Se abre `StoreScreen` | ☐ Pendiente |
+| ST-03 | Condiciones activas mostradas en tienda | 1. Mascota con condición → 2. Abrir tienda | Banda roja superior muestra las condiciones activas de la mascota | ☐ Pendiente |
+| ST-04 | Tratamiento útil resaltado | 1. Mascota con `cold` → 2. Abrir tienda | La tarjeta "Antihistamínico" tiene borde rojo destacado y texto "✓ Útil ahora" | ☐ Pendiente |
+| ST-05 | Compra exitosa descuenta monedas | 1. Tener ≥ 15 monedas → 2. Comprar Antihistamínico | Saldo de monedas disminuye en 15, snack verde de confirmación | ☐ Pendiente |
+| ST-06 | Compra cura la condición | 1. Mascota con `cold` → 2. Comprar Antihistamínico | La condición `cold` desaparece de la banda de stats en GameScreen | ☐ Pendiente |
+| ST-07 | Sin monedas suficientes = botón inactivo | 1. Tener < 35 monedas → 2. Abrir tienda | El botón de compra del Antibiótico aparece gris, no responde al tap | ☐ Pendiente |
+| ST-08 | Descanso Forzado es gratuito | 1. Abrir tienda | La tarjeta "Descanso Forzado" muestra botón "USAR" (sin precio en monedas) | ☐ Pendiente |
+| ST-09 | Vitaminas suben salud | 1. Tener ≥ 25 monedas → 2. Comprar Vitaminas | `health += 20` en la barra de stats (sin curar condición) | ☐ Pendiente |
+| ST-10 | Venda cura lesión grave y leve | 1. Mascota con `seriousInjury` → 2. Comprar Venda (20🪙) | Ambos tipos de lesión son curados si están presentes | ☐ Pendiente |
+| ST-11 | Saldo actualizado al volver a GameScreen | 1. Comprar en tienda → 2. Cerrar tienda | El contador de monedas en GameScreen refleja el nuevo saldo | ☐ Pendiente |
+
+### 5.6 Tabla de validación — Lesiones en minijuegos
+
+| ID | Escenario | Pasos | Resultado esperado |
+|----|-----------|-------|--------------------|
+| MJ-01 | Dodge Bombs: lesión con score 0 | 1. Jugar Dodge Bombs → 2. Terminar con score 0 (dejar que bomba golpee al inicio) | Repetir 5 veces: al menos 1–2 casos deben mostrar el mensaje de lesión en el Game Over | ☐ Pendiente |
+| MJ-02 | Dodge Bombs: lesión grave posible | 1. Score 0 en Dodge Bombs, repetir 10 veces | Al menos 1 caso debe mostrar "Lesión grave 🤕" | ☐ Pendiente |
+| MJ-03 | Dodge Bombs: sin lesión con score alto | 1. Terminar Dodge Bombs con score ≥ 5 | Mensaje de lesión NO aparece en el Game Over | ☐ Pendiente |
+| MJ-04 | Sky Jump: lesión por caída | 1. Jugar Sky Jump → 2. Caer inmediatamente (score 0) | Repetir 5 veces: al menos 1 caso muestra "🩹 Tu mascota se lastimó al caer" | ☐ Pendiente |
+| MJ-05 | Food Drop: lesión por bomba | 1. Jugar Food Drop → 2. Dejar que una bomba golpee de inmediato (score 0) | Repetir 5 veces: al menos 1 caso muestra "🩹 ¡La bomba lastimó a tu mascota!" | ☐ Pendiente |
+| MJ-06 | Whack-A-Pet: lesión con score 0 | 1. Jugar Whack-A-Pet → 2. No tocar nada (3 fallos, score 0) | Repetir 10 veces: al menos 1 caso muestra "🩹 Tu mascota recibió un golpe" | ☐ Pendiente |
+| MJ-07 | Lesión aplica condición al pet | 1. Obtener lesión en cualquier juego → 2. Volver a GameScreen | Banda de condiciones bajo las barras muestra la lesión activa | ☐ Pendiente |
+| MJ-08 | Lesión grave sobreescribe leve | 1. Pet con `minorInjury` → 2. Obtener `seriousInjury` en juego | Solo aparece `seriousInjury` (la leve desaparece) | ☐ Pendiente |
+| MJ-09 | Color Tap sin lesión | 1. Terminar Color Tap con cualquier score | No aparece ningún mensaje de lesión en el Game Over | ☐ Pendiente |
+| MJ-10 | Memory sin lesión | 1. Terminar Memory con cualquier score | No aparece ningún mensaje de lesión en el Game Over | ☐ Pendiente |
+| MJ-11 | Reaction Tap sin lesión | 1. Terminar Reaction Tap con cualquier score | No aparece ningún mensaje de lesión en el Game Over | ☐ Pendiente |
+
+---
+
+## 6. Pruebas de persistencia — Condiciones entre sesiones
+
+| ID | Escenario | Pasos | Resultado esperado |
+|----|-----------|-------|--------------------|
+| PS-01 | Condición persiste al cerrar app | 1. Mascota con `cold` → 2. Cerrar app completamente → 3. Reabrir | La condición `cold` sigue activa y visible | ☐ Pendiente |
+| PS-02 | Condición curada persiste | 1. Curar condición en tienda → 2. Cerrar app → 3. Reabrir | La condición curada ya no aparece | ☐ Pendiente |
+| PS-03 | Mascota existente (sin condiciones guardadas) no crashea | 1. Pet creada antes de esta versión → 2. Actualizar app → 3. Abrir | App abre normalmente, mascota sin condiciones, sin crash (backward-compatible por defaults en Hive) | ☐ Pendiente |
+| PS-04 | Condición acumula decay offline | 1. Mascota con `fever` → 2. Cerrar app 3 horas → 3. Reabrir | Salud bajó ~15 puntos adicionales (5.0/hora × 3h) respecto al valor previo al cerrar | ☐ Pendiente |
+
+---
+
+## 7. Notas técnicas para el equipo
+
+### Backward compatibility con Hive
+Los nuevos campos `HiveField(15)` y `HiveField(16)` tienen valores por defecto de lista vacía en `pet_model.g.dart`. Mascotas guardadas con la versión anterior cargarán sin condiciones, lo que es el comportamiento correcto.
+
+### Probabilidades de enfermedad
+Las enfermedades son probabilísticas. Para QA manual acelerado, se puede reducir temporalmente `_baseChancePerHour` de `0.01` a `0.5` en `illness_service.dart` y aumentar `hoursElapsed` simulando más tiempo. Revertir antes del PR.
+
+### El test existente puede ser levemente no-determinista
+`stat_decay_service_test.dart` ahora usa el `IllnessService` real (con `Random()`). Los tests que verifican `PetState.happy` tienen un ~1% de falso negativo si la mascota contrae una condición durante el test. Es aceptable para esta etapa; en el futuro se puede inyectar un `Random` semillado.

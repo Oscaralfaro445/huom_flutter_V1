@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/services/coins_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../game/minigames/sky_jump_game.dart';
+import '../../domain/entities/pet.dart';
 import '../providers/pet_provider.dart';
 
 class SkyJumpScreen extends ConsumerStatefulWidget {
@@ -20,6 +23,7 @@ class _SkyJumpScreenState extends ConsumerState<SkyJumpScreen> {
   bool _gameOver = false;
   int _finalScore = 0;
   int _coinsEarned = 0;
+  ConditionType? _injury;
 
   @override
   void initState() {
@@ -31,16 +35,19 @@ class _SkyJumpScreenState extends ConsumerState<SkyJumpScreen> {
     setState(() {
       _gameOver = false;
       _finalScore = 0;
+      _injury = null;
     });
     _game = SkyJumpGame(
       onGameOver: (score) {
         final coins = _calculateCoins(score);
+        final injury = _rollInjury(score);
         setState(() {
           _gameOver = true;
           _finalScore = score;
           _coinsEarned = coins;
+          _injury = injury;
         });
-        _applyRewards(coins);
+        _applyRewards(coins, injury);
       },
     );
   }
@@ -52,9 +59,21 @@ class _SkyJumpScreenState extends ConsumerState<SkyJumpScreen> {
     return 5;
   }
 
-  Future<void> _applyRewards(int coins) async {
+  /// Caer rápido (score bajo) = posible lesión leve.
+  ConditionType? _rollInjury(int score) {
+    if (score >= 4) return null;
+    final roll = Random().nextDouble();
+    if (score == 0 && roll < 0.25) return ConditionType.minorInjury;
+    if (score <= 2 && roll < 0.12) return ConditionType.minorInjury;
+    return null;
+  }
+
+  Future<void> _applyRewards(int coins, ConditionType? injury) async {
     await sl<CoinsService>().addCoins(coins);
     await ref.read(petActionsProvider.notifier).playWithPet();
+    if (injury != null) {
+      await ref.read(petActionsProvider.notifier).applyInjury(injury);
+    }
   }
 
   @override
@@ -94,6 +113,7 @@ class _SkyJumpScreenState extends ConsumerState<SkyJumpScreen> {
             _SkyJumpGameOver(
               score: _finalScore,
               coins: _coinsEarned,
+              injury: _injury,
               onReplay: _startGame,
               onExit: () => Navigator.of(context).pop(),
             ),
@@ -106,12 +126,14 @@ class _SkyJumpScreenState extends ConsumerState<SkyJumpScreen> {
 class _SkyJumpGameOver extends StatelessWidget {
   final int score;
   final int coins;
+  final ConditionType? injury;
   final VoidCallback onReplay;
   final VoidCallback onExit;
 
   const _SkyJumpGameOver({
     required this.score,
     required this.coins,
+    required this.injury,
     required this.onReplay,
     required this.onExit,
   });
@@ -173,6 +195,17 @@ class _SkyJumpGameOver extends StatelessWidget {
                   color: AppColors.statPlay,
                 ),
               ),
+              if (injury != null) ...[
+                const SizedBox(height: 10),
+                const Text(
+                  '🩹 Tu mascota se lastimó al caer',
+                  style: TextStyle(
+                    fontFamily: 'PressStart2P',
+                    fontSize: 8,
+                    color: AppColors.statCritical,
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               Row(
                 children: [

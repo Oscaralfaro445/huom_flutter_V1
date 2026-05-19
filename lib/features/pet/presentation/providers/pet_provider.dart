@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/services/illness_service.dart';
 import '../../../../core/services/mutation_check_service.dart';
 import '../../../../core/services/mutation_history_tracker.dart';
 import '../../../../core/services/stat_decay_service.dart';
@@ -12,18 +13,14 @@ import '../../domain/usecases/play_usecase.dart';
 import '../../domain/usecases/bathe_usecase.dart';
 import '../../domain/usecases/create_pet_usecase.dart';
 import '../../domain/usecases/die_usecase.dart';
+import '../../domain/usecases/treat_pet_usecase.dart';
 
-// Provider principal que escucha la mascota en tiempo real
 final petStreamProvider = StreamProvider<Pet?>((ref) {
   return sl<PetRepository>().watchActivePet();
 });
 
-// Provider del memorial de muerte (se llena cuando la mascota muere)
 final deathMemorialProvider = StateProvider<PetMemorial?>((ref) => null);
 
-// Emite la mutación recién obtenida cuando baby→adult.
-// GameScreen lo escucha para mostrar MutationScreen.
-// Se resetea a null después de consumirlo.
 final evolutionEventProvider = StateProvider<PetMutation?>((ref) => null);
 
 final petActionsProvider =
@@ -39,18 +36,14 @@ class PetActionsNotifier extends AsyncNotifier<Pet?> {
     final pet = await repository.getActivePet();
     if (pet == null) return null;
 
-    // Aplicar decay al abrir la app
     final decayedPet = decayService.applyDecay(pet, DateTime.now());
 
-    // Registrar snapshot diario durante etapa Cría (una vez por día de juego)
     await tracker.recordSnapshot(decayedPet);
 
-    // Verificar y aplicar evolución de etapa
     final evolvedPet = await _checkEvolution(decayedPet);
 
     await repository.savePet(evolvedPet);
 
-    // Detectar muerte automática
     if (evolvedPet.state == PetState.dead) {
       await _handleDeath(evolvedPet);
       return null;
@@ -59,10 +52,6 @@ class PetActionsNotifier extends AsyncNotifier<Pet?> {
     return evolvedPet;
   }
 
-  /// Transiciones de etapa basadas en días vivos:
-  ///   egg  → baby   (día >= 1)
-  ///   baby → adult  (día >= 7, con selección de mutación)
-  ///   adult → elder (día >= 20)
   Future<Pet> _checkEvolution(Pet pet) async {
     if (pet.stage == PetStage.egg && pet.daysAlive >= 1) {
       return pet.copyWith(stage: PetStage.baby);
@@ -75,11 +64,8 @@ class PetActionsNotifier extends AsyncNotifier<Pet?> {
       final averages = await tracker.getAverages(pet.id);
       final mutation = checkService.checkMutation(averages);
 
-      // Limpiar historial para que no afecte a una vida futura
       await tracker.clearHistory(pet.id);
 
-      // Señalizar la evolución para que GameScreen abra MutationScreen.
-      // Usamos Future.microtask para no modificar otro provider durante build().
       Future.microtask(
         () => ref.read(evolutionEventProvider.notifier).state = mutation,
       );
@@ -103,8 +89,6 @@ class PetActionsNotifier extends AsyncNotifier<Pet?> {
     }
 
     final memorial = await sl<DieUseCase>().call(pet, cause);
-
-    // Guardar el memorial para mostrar en DeathScreen
     ref.read(deathMemorialProvider.notifier).state = memorial;
   }
 
@@ -116,31 +100,48 @@ class PetActionsNotifier extends AsyncNotifier<Pet?> {
   }
 
   Future<void> feedPet(FoodItem food) async {
-    state = await AsyncValue.guard(
-      () => sl<FeedPetUseCase>().call(food),
-    );
+    state = await AsyncValue.guard(() => sl<FeedPetUseCase>().call(food));
     await _checkDeath();
   }
 
   Future<void> playWithPet() async {
-    state = await AsyncValue.guard(
-      () => sl<PlayUseCase>().call(),
-    );
+    state = await AsyncValue.guard(() => sl<PlayUseCase>().call());
     await _checkDeath();
   }
 
   Future<void> sleepPet() async {
-    state = await AsyncValue.guard(
-      () => sl<SleepUseCase>().call(),
-    );
+    state = await AsyncValue.guard(() => sl<SleepUseCase>().call());
     await _checkDeath();
   }
 
   Future<void> bathePet() async {
-    state = await AsyncValue.guard(
-      () => sl<BatheUseCase>().call(),
-    );
+    state = await AsyncValue.guard(() => sl<BatheUseCase>().call());
     await _checkDeath();
+  }
+
+  Future<void> treatPet(TreatmentItem treatment) async {
+    state = await AsyncValue.guard(() => sl<TreatPetUseCase>().call(treatment));
+    await _checkDeath();
+  }
+
+  /// Aplica una lesión inmediatamente desde un minijuego.
+  Future<void> applyInjury(ConditionType injuryType) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+
+    final illnessService = sl<IllnessService>();
+    final newConditions =
+        illnessService.applyInjury(current.conditions, injuryType);
+
+    if (newConditions.length == current.conditions.length) return;
+
+    final injuredPet = current.copyWith(
+      conditions: newConditions,
+      state: PetState.sick,
+    );
+
+    await sl<PetRepository>().savePet(injuredPet);
+    state = AsyncData(injuredPet);
   }
 
   Future<void> resetForNewPet() async {
