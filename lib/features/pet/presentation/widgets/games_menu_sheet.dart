@@ -108,107 +108,111 @@ class _GamesMenuSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.backgroundSecondary,
-              AppColors.background,
-            ],
-          ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
         ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Drag handle
-                Center(
-                  child: Container(
-                    width: 48,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: AppColors.textSecondary.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                // Header
-                Row(
-                  children: [
-                    const Text('🎮', style: TextStyle(fontSize: 26)),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'MINIJUEGOS',
-                          style: TextStyle(
-                            fontFamily: 'PressStart2P',
-                            fontSize: 14,
-                            color: AppColors.textPrimary,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${_games.where((g) => g.enabled).length} disponibles',
-                          style: const TextStyle(
-                            fontFamily: 'PressStart2P',
-                            fontSize: 7,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.close,
-                          color: AppColors.textPrimary,
-                          size: 20,
-                        ),
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppColors.backgroundSecondary,
+                AppColors.background,
+              ],
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+              child: Column(
+                children: [
+                  // Drag handle
+                  Center(
+                    child: Container(
+                      width: 48,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: AppColors.textSecondary.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(3),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // Grid de minijuegos (2 columnas)
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _games.length,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.95,
                   ),
-                  itemBuilder: (context, i) {
-                    final g = _games[i];
-                    return _GameCard(
-                      info: g,
-                      onTap: g.enabled
-                          ? () => Navigator.of(context).pop(g.id)
-                          : null,
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-              ],
+                  const SizedBox(height: 18),
+                  // Header
+                  Row(
+                    children: [
+                      const Text('🎮', style: TextStyle(fontSize: 26)),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'MINIJUEGOS',
+                            style: TextStyle(
+                              fontFamily: 'PressStart2P',
+                              fontSize: 14,
+                              color: AppColors.textPrimary,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_games.where((g) => g.enabled).length} disponibles',
+                            style: const TextStyle(
+                              fontFamily: 'PressStart2P',
+                              fontSize: 7,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            color: AppColors.textPrimary,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Grid de minijuegos (2 columnas)
+                  Expanded(
+                    child: GridView.builder(
+                      itemCount: _games.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.95,
+                      ),
+                      itemBuilder: (context, i) {
+                        final g = _games[i];
+                        return _GameCard(
+                          info: g,
+                          onTap: g.enabled
+                              ? () => Navigator.of(context).pop(g.id)
+                              : null,
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
             ),
           ),
         ),

@@ -14,6 +14,7 @@ Future<FoodItem?> showFoodMenu(BuildContext context) {
   return showModalBottomSheet<FoodItem>(
     context: context,
     backgroundColor: AppColors.cardBackground,
+    isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -54,12 +55,17 @@ class _FoodMenuSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      top: false,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             // Indicador de drag
             Center(
               child: Container(
@@ -85,15 +91,28 @@ class _FoodMenuSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            for (final info in _items) ...[
-              _FoodTile(
-                info: info,
-                onTap: () => Navigator.of(context).pop(info.item),
+
+            // --- INICIO DEL CAMBIO ---
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final info in _items) ...[
+                      _FoodTile(
+                        info: info,
+                        onTap: () => Navigator.of(context).pop(info.item),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-            ],
+            ),
+            // --- FIN DEL CAMBIO ---
           ],
         ),
+      ),
       ),
     );
   }
