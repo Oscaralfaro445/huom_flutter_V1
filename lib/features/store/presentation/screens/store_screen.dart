@@ -30,7 +30,7 @@ class StoreScreen extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 children: [
-                  _SectionTitle(text: 'Medicamentos'),
+                  const _SectionTitle(text: 'Medicamentos'),
                   const SizedBox(height: 8),
                   ...TreatmentItem.values.map((item) => _TreatmentCard(
                         item: item,
