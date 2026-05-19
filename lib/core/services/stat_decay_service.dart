@@ -36,7 +36,7 @@ class StatDecayService {
   Pet applyDecay(Pet pet, DateTime now) {
     if (pet.state == PetState.dead) return pet;
 
-    final hoursElapsed = now.difference(pet.lastInteraction).inMinutes / 60.0;
+    final hoursElapsed = now.difference(pet.lastInteraction).inSeconds / 3600.0;
 
     // Menos de 36 segundos, ignorar
     if (hoursElapsed < 0.01) return pet;

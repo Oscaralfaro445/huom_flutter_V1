@@ -1,12 +1,26 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:huom/core/services/illness_service.dart';
 import 'package:huom/core/services/stat_decay_service.dart';
 import 'package:huom/features/pet/domain/entities/pet.dart';
 
+/// Random determinista para tests: nextDouble() siempre devuelve 1.0,
+/// por lo que ningún chequeo probabilístico de enfermedad se activa
+/// (todos los thresholds son < 1.0).
+class _NeverSickRandom implements Random {
+  @override
+  double nextDouble() => 1.0;
+  @override
+  int nextInt(int max) => 0;
+  @override
+  bool nextBool() => false;
+}
+
 void main() {
   late StatDecayService service;
 
-  setUp(() => service = StatDecayService(IllnessService()));
+  setUp(() => service = StatDecayService(IllnessService(_NeverSickRandom())));
 
   // ---------------------------------------------------------------------------
   // Helper

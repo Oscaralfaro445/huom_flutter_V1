@@ -2,7 +2,9 @@ import 'dart:math';
 import '../../features/pet/domain/entities/pet.dart';
 
 class IllnessService {
-  static final Random _rng = Random();
+  final Random _rng;
+
+  IllnessService([Random? random]) : _rng = random ?? Random();
 
   // Probabilidad base de enfermar: ~1% por hora sin factores de riesgo
   static const double _baseChancePerHour = 0.01;
