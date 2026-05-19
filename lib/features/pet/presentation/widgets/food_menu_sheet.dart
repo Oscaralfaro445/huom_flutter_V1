@@ -13,7 +13,6 @@ import '../../domain/usecases/feed_pet_usecase.dart';
 Future<FoodItem?> showFoodMenu(BuildContext context) {
   return showModalBottomSheet<FoodItem>(
     context: context,
-    isScrollControlled: true, // <--- Agrega esta línea
     backgroundColor: AppColors.cardBackground,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
