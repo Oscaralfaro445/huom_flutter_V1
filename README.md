@@ -234,3 +234,50 @@ Made with ❤️ and lots of pixel art
 *"Every pet is unique. Take good care of it."*
 
 </div>
+
+---
+
+## Bitácora de Cambios
+
+### 2026-05-29 — Guardado en la nube (Firebase Cloud Save)
+
+Se implementó un sistema de respaldo automático en la nube usando **Firebase Auth anónima** y **Cloud Firestore**. El progreso del jugador ahora se sincroniza sin necesidad de crear una cuenta, y se restaura automáticamente si se borra la app o se cambia de dispositivo.
+
+**Cambios:**
+- `AuthService` — autenticación anónima automática al primer arranque
+- `CloudSaveService` — servicio de lectura/escritura en Firestore con stream de estado de sincronización
+- `CloudSyncBadge` — badge visual en el header del juego (gris=inactivo, girando=sincronizando, verde=guardado, rojo=sin conexión)
+- `PetRepositoryImpl`, `CoinsService`, `MemorialRepositoryImpl` — ahora disparan un sync a la nube tras cada guardado local (fire-and-forget, no bloquea el juego)
+- `main.dart` — al arrancar la app se compara el progreso local con el de la nube y se restaura el más reciente
+- `pubspec.yaml` — se agregaron `firebase_auth ^5.1.0` y `cloud_firestore ^5.2.0`
+
+**Lógica de conflictos al restaurar:**
+- Mascota → gana la versión con `lastInteraction` más reciente
+- Monedas → se toma el valor máximo entre local y nube
+- Memoriales → se fusionan ambas listas por ID
+
+**Estructura en Firestore:**
+```
+users/{uid}/
+  save_state: { pet: {...}|null, coins: int, lastSync: Timestamp }
+  memorials/: { id, petName, mutationName, causeOfDeath, daysAlive, diedAt }
+```
+
+> **Requisito:** Habilitar en Firebase Console los servicios **Authentication** (proveedor Anónimo) y **Firestore Database**, y tener `google-services.json` en `android/app/`. Si Firebase no está configurado, la app funciona igual que antes usando solo el almacenamiento local.
+
+---
+
+### 2026-05-18 — Sistema de Salud, Lesiones y Tienda
+
+Se implementó un sistema completo de salud y condiciones para la mascota, una tienda de medicamentos, y un sistema de daño por agotamiento.
+
+**Cambios:**
+- `IllnessService` — gestiona enfermedades (resfriado, gripe, fiebre) y lesiones (leve, grave, agotamiento), incluyendo progresión temporal y curación
+- `PetCondition` / `ConditionType` — nuevas entidades en el dominio para representar condiciones activas con timestamp de inicio
+- `PetModel` — se añadieron `conditionTypeIndexes` y `conditionTimestamps` (campos Hive 15 y 16) para persistir condiciones
+- `StatsBarWidget` — muestra indicadores de condiciones activas junto a las barras de stats
+- `StoreScreen` — tienda de medicamentos donde gastar monedas para curar condiciones específicas
+- `TreatPetUseCase` — caso de uso para aplicar tratamientos desde la tienda
+- `stat_decay_service.dart` — añadido daño por agotamiento (sleep < 10 → pierde salud con el tiempo)
+- Minijuegos — al perder un minijuego existe probabilidad de contraer una lesión (`applyInjury` en el provider)
+- El sueño prolongado sin dormir ahora actúa como factor de riesgo para enfermedades
