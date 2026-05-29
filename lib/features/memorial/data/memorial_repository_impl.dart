@@ -1,10 +1,15 @@
 import 'package:hive/hive.dart';
+import '../../../../core/services/cloud_save_service.dart';
 import '../domain/memorial_repository.dart';
 import '../domain/pet_memorial.dart';
 import '../domain/pet_memorial_model.dart';
 
 class MemorialRepositoryImpl implements MemorialRepository {
   static const String _boxName = 'memorials';
+
+  final CloudSaveService _cloudSave;
+
+  MemorialRepositoryImpl(this._cloudSave);
 
   Future<Box<PetMemorialModel>> get _box async =>
       Hive.openBox<PetMemorialModel>(_boxName);
@@ -20,6 +25,7 @@ class MemorialRepositoryImpl implements MemorialRepository {
       ..daysAlive = memorial.daysAlive
       ..diedAt = memorial.diedAt;
     await box.put(model.id, model);
+    _cloudSave.saveMemorial(memorial);
   }
 
   @override

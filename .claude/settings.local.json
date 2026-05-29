@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(flutter analyze *)",
-      "Bash(flutter test *)"
+      "Bash(flutter test *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\hugoc\\\\AndroidStudioProjects\\\\huom_flutter_V1\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\hugoc\\\\AndroidStudioProjects\\\\huom_flutter_V1\\\\lib\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(flutter pub *)"
     ]
   }
 }

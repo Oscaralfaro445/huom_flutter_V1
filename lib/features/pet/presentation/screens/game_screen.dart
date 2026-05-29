@@ -11,6 +11,7 @@ import '../../domain/usecases/feed_pet_usecase.dart';
 import '../providers/pet_provider.dart';
 import '../widgets/action_buttons_widget.dart';
 import '../widgets/action_feedback_overlay.dart';
+import '../widgets/cloud_sync_badge.dart';
 import '../widgets/food_menu_sheet.dart';
 import '../widgets/games_menu_sheet.dart';
 import '../widgets/stats_bar_widget.dart';
@@ -189,6 +190,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                         child: const Text('🪦',
                             style: TextStyle(fontSize: 20)),
                       ),
+                      const SizedBox(width: 8),
+                      const CloudSyncBadge(),
                     ],
                   ),
                 ],

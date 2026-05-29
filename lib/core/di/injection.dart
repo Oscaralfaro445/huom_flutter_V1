@@ -19,6 +19,8 @@ import '../services/coins_service.dart';
 import '../services/illness_service.dart';
 import '../services/mutation_history_tracker.dart';
 import '../services/mutation_check_service.dart';
+import '../services/auth_service.dart';
+import '../services/cloud_save_service.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -28,16 +30,20 @@ Future<void> setupDependencies() async {
   Hive.registerAdapter(PetModelAdapter());
   Hive.registerAdapter(PetMemorialModelAdapter());
 
+  // Cloud services (auth + save)
+  sl.registerSingleton<AuthService>(AuthService());
+  sl.registerSingleton<CloudSaveService>(CloudSaveService(sl<AuthService>()));
+
   // Services
   sl.registerSingleton<IllnessService>(IllnessService());
   sl.registerSingleton<StatDecayService>(StatDecayService(sl<IllnessService>()));
-  sl.registerSingleton<CoinsService>(CoinsService());
+  sl.registerSingleton<CoinsService>(CoinsService(sl<CloudSaveService>()));
   sl.registerSingleton<MutationHistoryTracker>(MutationHistoryTracker());
   sl.registerSingleton<MutationCheckService>(MutationCheckService());
 
   // Repositories
-  sl.registerSingleton<PetRepository>(PetRepositoryImpl());
-  sl.registerSingleton<MemorialRepository>(MemorialRepositoryImpl());
+  sl.registerSingleton<PetRepository>(PetRepositoryImpl(sl<CloudSaveService>()));
+  sl.registerSingleton<MemorialRepository>(MemorialRepositoryImpl(sl<CloudSaveService>()));
 
   // Use Cases
   sl.registerFactory(() => CreatePetUseCase(sl<PetRepository>()));

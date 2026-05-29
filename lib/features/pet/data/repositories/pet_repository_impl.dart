@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import '../../../../core/services/cloud_save_service.dart';
 import '../../domain/entities/pet.dart';
 import '../../domain/repositories/pet_repository.dart';
 import '../models/pet_model.dart';
@@ -6,6 +7,10 @@ import '../models/pet_mapper.dart';
 
 class PetRepositoryImpl implements PetRepository {
   static const String _boxName = 'pets';
+
+  final CloudSaveService _cloudSave;
+
+  PetRepositoryImpl(this._cloudSave);
 
   Future<Box<PetModel>> get _box async => Hive.openBox<PetModel>(_boxName);
 
@@ -20,12 +25,14 @@ class PetRepositoryImpl implements PetRepository {
   Future<void> savePet(Pet pet) async {
     final box = await _box;
     await box.put(pet.id, pet.toModel());
+    _cloudSave.savePet(pet);
   }
 
   @override
   Future<void> deleteActivePet() async {
     final box = await _box;
     await box.clear();
+    _cloudSave.savePet(null);
   }
 
   @override
