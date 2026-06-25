@@ -1,5 +1,6 @@
 import '../../features/pet/domain/entities/pet.dart';
 import 'illness_service.dart';
+import 'notification_service.dart';
 
 class _DecayMultipliers {
   final double hunger;
@@ -17,15 +18,16 @@ class _DecayMultipliers {
 
 class StatDecayService {
   final IllnessService _illnessService;
+  final NotificationService _notificationService;
 
-  StatDecayService(this._illnessService);
+  StatDecayService(this._illnessService, this._notificationService);
 
-  // Decay base por hora (puntos/hora)
-  static const double _hungerDecay = 3.0;
-  static const double _moodDecay = 1.5;
-  static const double _playDecay = 2.0;
-  static const double _sleepDecay = 2.5;
-  static const double _cleanlinessDecay = 1.8;
+  // TEST: valores altos para probar notificaciones — restaurar después
+  static const double _hungerDecay = 500.0;
+  static const double _moodDecay = 500.0;
+  static const double _playDecay = 500.0;
+  static const double _sleepDecay = 500.0;
+  static const double _cleanlinessDecay = 500.0;
 
   // Penalizaciones cuando la mascota está muy sucia (cleanliness < 25)
   static const double _dirtyHealthPenalty = 2.0;
@@ -38,8 +40,8 @@ class StatDecayService {
 
     final hoursElapsed = now.difference(pet.lastInteraction).inSeconds / 3600.0;
 
-    // Menos de 36 segundos, ignorar
-    if (hoursElapsed < 0.01) return pet;
+    // TEST: umbral bajado a ~4 segundos para pruebas — restaurar a 0.01
+    if (hoursElapsed < 0.001) return pet;
 
     final stageMult = switch (pet.stage) {
       PetStage.baby => 1.2,
@@ -84,13 +86,25 @@ class StatDecayService {
 
     final newState = _evaluateState(newStats, hoursElapsed, pet, newConditions);
 
-    return pet.copyWith(
+    final updatedPetFinal = pet.copyWith(
       stats: newStats,
       state: newState,
       lastInteraction: now,
       daysAlive: now.difference(pet.createdAt).inDays,
       conditions: newConditions,
     );
+
+    _notificationService.scheduleStatAlerts(
+      petName: pet.name,
+      stats: newStats,
+      hungerRate: _hungerDecay * stageMult * mutMult.hunger,
+      sleepRate: _sleepDecay * stageMult * mutMult.sleep,
+      playRate: _playDecay * stageMult * mutMult.play,
+      cleanlinessRate: _cleanlinessDecay * stageMult,
+      healthRate: isDirty ? _dirtyHealthPenalty : 0.0,
+    );
+
+    return updatedPetFinal;
   }
 
   PetState _evaluateState(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/di/injection.dart';
+import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/pet/presentation/providers/pet_provider.dart';
 import 'features/pet/presentation/screens/create_pet_screen.dart';
@@ -10,6 +11,7 @@ import 'features/pet/presentation/screens/game_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupDependencies();
+  await sl<NotificationService>().initialize();
   runApp(const ProviderScope(child: MyApp()));
 }
 
