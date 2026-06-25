@@ -19,6 +19,7 @@ import '../services/coins_service.dart';
 import '../services/illness_service.dart';
 import '../services/mutation_history_tracker.dart';
 import '../services/mutation_check_service.dart';
+import '../services/notification_service.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -30,7 +31,10 @@ Future<void> setupDependencies() async {
 
   // Services
   sl.registerSingleton<IllnessService>(IllnessService());
-  sl.registerSingleton<StatDecayService>(StatDecayService(sl<IllnessService>()));
+  sl.registerSingleton<NotificationService>(NotificationService());
+  sl.registerSingleton<StatDecayService>(
+    StatDecayService(sl<IllnessService>(), sl<NotificationService>()),
+  );
   sl.registerSingleton<CoinsService>(CoinsService());
   sl.registerSingleton<MutationHistoryTracker>(MutationHistoryTracker());
   sl.registerSingleton<MutationCheckService>(MutationCheckService());
