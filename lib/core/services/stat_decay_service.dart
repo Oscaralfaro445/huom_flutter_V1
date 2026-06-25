@@ -22,12 +22,11 @@ class StatDecayService {
 
   StatDecayService(this._illnessService, [this._notificationService]);
 
-  // TEST: valores altos para probar notificaciones — restaurar después
-  static const double _hungerDecay = 500.0;
-  static const double _moodDecay = 500.0;
-  static const double _playDecay = 500.0;
-  static const double _sleepDecay = 500.0;
-  static const double _cleanlinessDecay = 500.0;
+  static const double _hungerDecay = 3.0;
+  static const double _moodDecay = 1.5;
+  static const double _playDecay = 2.0;
+  static const double _sleepDecay = 2.5;
+  static const double _cleanlinessDecay = 1.8;
 
   // Penalizaciones cuando la mascota está muy sucia (cleanliness < 25)
   static const double _dirtyHealthPenalty = 2.0;
@@ -40,8 +39,7 @@ class StatDecayService {
 
     final hoursElapsed = now.difference(pet.lastInteraction).inSeconds / 3600.0;
 
-    // TEST: umbral bajado a ~4 segundos para pruebas — restaurar a 0.01
-    if (hoursElapsed < 0.001) return pet;
+    if (hoursElapsed < 0.01) return pet;
 
     final stageMult = switch (pet.stage) {
       PetStage.baby => 1.2,
