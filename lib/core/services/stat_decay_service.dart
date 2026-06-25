@@ -18,9 +18,9 @@ class _DecayMultipliers {
 
 class StatDecayService {
   final IllnessService _illnessService;
-  final NotificationService _notificationService;
+  final NotificationService? _notificationService;
 
-  StatDecayService(this._illnessService, this._notificationService);
+  StatDecayService(this._illnessService, [this._notificationService]);
 
   // TEST: valores altos para probar notificaciones — restaurar después
   static const double _hungerDecay = 500.0;
@@ -94,7 +94,7 @@ class StatDecayService {
       conditions: newConditions,
     );
 
-    _notificationService.scheduleStatAlerts(
+    _notificationService?.scheduleStatAlerts(
       petName: pet.name,
       stats: newStats,
       hungerRate: _hungerDecay * stageMult * mutMult.hunger,
